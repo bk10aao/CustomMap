@@ -9,6 +9,14 @@ build/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/.gitignore
+    .idea/gradle.xml
+    .idea/inspectionProfiles/Project_Default.xml
+    .idea/misc.xml
+    .idea/uiDesigner.xml
+    .idea/vcs.xml
+
+(use --cached to keep
 *.iws
 *.iml
 *.ipr
@@ -40,3 +48,4 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
