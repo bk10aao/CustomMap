@@ -1,5 +1,7 @@
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -241,11 +243,9 @@ class CustomMapTest {
     @Test
     public void createMap_onKeySet_returnsAllKeysFromMap() {
         CustomMap map = new CustomMap(Integer.class, Integer.class);
-        for(int i = 0; i < 10; i++)
-            map.put(i, i * 10);
+        for(int i = 0; i < 10; i++) map.put(i, i * 10);
         Set keysExpected = new HashSet<Integer>();
-        for(int i = 0; i < 10; i++)
-            keysExpected.add(i);
+        for(int i = 0; i < 10; i++) keysExpected.add(i);
         Set keys = map.keySet();
         assertEquals(keysExpected, keys);
     }
@@ -299,6 +299,47 @@ class CustomMapTest {
     }
 
     @Test
+    public void createTwoNonEqualMap_onEquals_returns_false() {
+        CustomMap map = new CustomMap(String.class, Integer.class);
+        CustomMap mapTwo = new CustomMap(Integer.class, Integer.class);
+        assertNotEquals(map, mapTwo);
+    }
+
+    @Test
+    public void createTwoEqualMapTypes_onEquals_returns_true() {
+        CustomMap map = new CustomMap(String.class, Integer.class);
+        CustomMap mapTwo = new CustomMap(String.class, Integer.class);
+        assertEquals(map, mapTwo);
+    }
+
+    @Test
+    public void createTwoNonEqualMapTypes_andAddingItems_onEquals_returns_false() {
+        CustomMap map = new CustomMap(String.class, Integer.class);
+        for(int i = 0; i < 10; i++) map.put(String.valueOf(i), i * 10);
+        CustomMap mapTwo = new CustomMap(Integer.class, Integer.class);
+        for(int i = 0; i < 10; i++) mapTwo.put(i, i * 10);
+        assertNotEquals(map, mapTwo);
+    }
+
+    @Test
+    public void createTwoEqualMapTypes_andAddingItems_onEquals_returns_true() {
+        CustomMap map = new CustomMap(String.class, Integer.class);
+        for(int i = 0; i < 10; i++) map.put(String.valueOf(i), i * 10);
+        CustomMap mapTwo = new CustomMap(String.class, Integer.class);
+        for(int i = 0; i < 10; i++) mapTwo.put(String.valueOf(i), i * 10);
+        assertEquals(map, mapTwo);
+    }
+
+    @Test
+    public void createTwoEqualMapTypes_andAddingItems_thatCauseNoMatch_onEquals_returns_false() {
+        CustomMap map = new CustomMap(String.class, Integer.class);
+        for(int i = 0; i < 10; i++) map.put(String.valueOf(i), i * 10);
+        CustomMap mapTwo = new CustomMap(String.class, Integer.class);
+        for(int i = 0; i < 10; i++) mapTwo.put(String.valueOf(i), i * 100);
+        assertNotEquals(map, mapTwo);
+    }
+
+    @Test
     public void onAdding_13Items_withLoadFactorOf_point_75_returns_MapSizeOf_23_andCorrectlyRehashedValues() {
         CustomMap map = new CustomMap(Integer.class, Integer.class);
         assertEquals(17, map.getMapSize());
@@ -321,5 +362,102 @@ class CustomMapTest {
         assertEquals(17, map.getMapSize());
 
         for(int i = 10; i < 14; i++) assertEquals(i * 10, map.get(i));
+    }
+
+    @Test
+    public void onReplacingValueInMap_withNullKey_throws_NullPointerException() {
+        CustomMap map = new CustomMap(String.class, String.class);
+        assertThrows(NullPointerException.class, ()-> map.replace("10", null));
+    }
+
+    @Test
+    public void onReplacingValueInMap_withNullValue_throws_NullPointerException() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        assertThrows(NullPointerException.class, ()-> map.replace(null, 10));
+    }
+
+    @Test
+    public void onReplacingValueInMap_withNullKeyAndValue_throws_NullPointerException() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        assertThrows(NullPointerException.class, ()-> map.replace(null, null));
+    }
+
+    @Test
+    public void onReplacingValueInMap_thatDoesNotExist_returns_null() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        assertNull(map.replace(1, 1));
+    }
+
+    @Test
+    public void onReplacingValueInMapForKeyThatDoesExist_returns_previousKey_andUpdatesValue() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        map.put(1, 1);
+        assertEquals(1, map.replace(1, 10));
+        assertEquals(10, map.get(1));
+    }
+
+    @Test
+    public void onReplacingKeyAndValue_withNullKey_throws_NullPointerException() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        map.put(1, 1);
+        assertThrows(NullPointerException.class, ()-> map.replace(null, 1, 1));
+    }
+
+    @Test
+    public void onReplacingKeyAndValue_withNullMatchingValue_throws_NullPointerException() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        map.put(1, 1);
+        assertThrows(NullPointerException.class, ()-> map.replace(1, null, 1));
+    }
+
+    @Test
+    public void onReplacingKeyAndValue_withNullNewValue_throws_NullPointerException() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        map.put(1, 1);
+        assertThrows(NullPointerException.class, ()-> map.replace(1, 1, null));
+    }
+
+    @Test
+    public void onReplacingKeyAndValue_withNullKeyAndValueAndNullNewValue_throws_NullPointerException() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        map.put(1, 1);
+        assertThrows(NullPointerException.class, ()-> map.replace(null, null, null));
+    }
+
+    @Test
+    public void onReplacingKeyAndValue_withValueReturnedFromKeyDoesNotMatch_returns_false() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        map.put(1, 1);
+        assertFalse(map.replace(1,2,2));
+    }
+
+    @Test
+    public void onReplacingKeyAndValue_withValueReturnedFromKeyDoesMatch_returns_true_andUpdatesValue() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        map.put(1, 1);
+        assertTrue(map.replace(1,1,2));
+        assertEquals(2, map.get(1));
+    }
+
+    @Test
+    public void onGettingValuesAsCollection_fromEmptyMap_returnsEmptyCollection() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        assertEquals(0, map.values().size());
+    }
+
+    @Test
+    public void onGettingValuesAsCollection_fromMapOfTenInteger_returnsMatchingCollectionOfValues() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        for(int i = 0; i < 10; i++)
+            map.put(i, i * 10);
+
+        Collection<Integer> expectedValues = new ArrayList<>();
+        for(int i = 0; i < 10; i++)
+            expectedValues.add(i * 10);
+
+        Collection<?> values = map.values();
+        assertEquals(10, values.size());
+        assertEquals(10, expectedValues.size());
+        assertEquals(expectedValues, values);
     }
 }

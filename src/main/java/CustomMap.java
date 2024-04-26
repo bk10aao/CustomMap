@@ -1,9 +1,10 @@
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class CustomMap<T> {
 
@@ -51,6 +52,31 @@ public class CustomMap<T> {
                 .anyMatch(entry -> entry.value.equals(value));
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        CustomMap<?> map1 = (CustomMap<?>) o;
+        if(size != map1.size)
+            return false;
+        T[] mapValues = (T[]) Arrays.stream(map).toArray();
+        T[] map1Values = (T[]) Arrays.stream(map1.map).toArray();
+        for(int i = 0; i < mapValues.length; i++) {
+            LinkedList<MapEntry> first = map[i];
+            LinkedList<MapEntry> second = (LinkedList<MapEntry>) map1Values[i];
+            if(first == null && second == null)
+                continue;
+            else if(first == null || second == null)
+                return false;
+            for (int x = 0; x < first.size(); x++)
+                if (!first.get(x).key.equals(second.get(x).key) || !first.get(x).value.equals(second.get(x).value))
+                    return false;
+        }
+        return Objects.equals(key, map1.key) && Objects.equals(type, map1.type);
+    }
+
     public T get(final T key) {
         if(key == null)
             throw new NullPointerException();
@@ -71,22 +97,18 @@ public class CustomMap<T> {
         if(indexedMapEntry == null)
             return null;
         return indexedMapEntry.stream()
-                .filter(mapEntry -> mapEntry.key.equals(key))
-                .findFirst()
-                .map(mapEntry -> mapEntry.value)
-                .orElse(defaultValue);
+                                .filter(mapEntry -> mapEntry.key.equals(key))
+                                .findFirst()
+                                .map(mapEntry -> mapEntry.value)
+                                .orElse(defaultValue);
     }
 
     public Set keySet() {
-        Set<T> keySet = new HashSet<>();
-        for(LinkedList<MapEntry> entryList : map) {
-            if(entryList != null) {
-                for(MapEntry entry: entryList) {
-                    keySet.add(entry.key);
-                }
-            }
-        }
-        return keySet;
+        return Arrays.stream(map)
+                        .filter(Objects::nonNull)
+                        .flatMap(entryList -> entryList.stream())
+                        .map(entry -> entry.key)
+                        .collect(Collectors.toSet());
     }
 
     public T put(final T key, final T value) {
@@ -123,10 +145,10 @@ public class CustomMap<T> {
 
         if(entryLinkedList != null)
             for (int i = 0; i < entryLinkedList.size(); i++) {
-            MapEntry entry = entryLinkedList.get(i);
-            if (entry.key.equals(key))
-                return removeItem(entryLinkedList, i);
-        }
+                MapEntry entry = entryLinkedList.get(i);
+                if (entry.key.equals(key))
+                    return removeItem(entryLinkedList, i);
+            }
         return null;
     }
 
@@ -142,16 +164,44 @@ public class CustomMap<T> {
         return false;
     }
 
+    public T replace(T key, T value) {
+        if(key == null || value == null)
+            throw new NullPointerException();
+        return containsKey(key) ? put(key, value) : null;
+    }
+
+    public boolean replace(T key, T oldValue, T newValue) {
+        if(key == null || oldValue == null || newValue == null)
+            throw new NullPointerException();
+        if(containsKey(key))
+            if (get(key).equals(oldValue)) {
+                put(key, newValue);
+                return true;
+            }
+        return false;
+    }
+
+    public int size() {
+        return this.size;
+    }
+
+    public Collection<T> values() {
+        Collection<T> values = new ArrayList<>();
+        if(size == 0)
+            return values;
+        return Arrays.stream(map)
+                        .filter(Objects::nonNull)
+                        .flatMap(item -> item.stream())
+                        .map(mapEntry -> mapEntry.value)
+                        .collect(Collectors.toList());
+    }
+
     private T removeItem(final LinkedList<MapEntry> entryLinkedList, final int index) {
         MapEntry removed = entryLinkedList.remove(index);
         size--;
         if(mapSize > 17 && size <= mapSize / 4)
             reduce();
         return removed.value;
-    }
-
-    public int size() {
-        return this.size;
     }
 
     private void addNewIndexEntry(final T key, final T value, final int index) {
@@ -166,10 +216,10 @@ public class CustomMap<T> {
     private void expand() {
         mapSize = primes[++primesIndex];
         CustomMap<T> newMap = new CustomMap(this.key, this.type, mapSize);
-        for (LinkedList<MapEntry> linkedList : map)
-            if (linkedList != null)
-                for (MapEntry entry : linkedList)
-                    newMap.put(entry.key, entry.value);
+        Arrays.stream(map)
+                .filter(Objects::nonNull)
+                .flatMap(linkedList -> linkedList.stream())
+                .forEach(entry -> newMap.put(entry.key, entry.value));
         map = newMap.map;
     }
 
@@ -177,21 +227,23 @@ public class CustomMap<T> {
         primesIndex = (primesIndex / 2);
         mapSize = primes[primesIndex];
         CustomMap newMap = new CustomMap(this.key, this.type, mapSize);
-        for (LinkedList<MapEntry> mapEntries : map)
-            if (mapEntries != null)
-                for (MapEntry item : mapEntries)
-                    newMap.put(item.key, item.value);
+        Arrays.stream(map)
+                .filter(Objects::nonNull)
+                .flatMap(mapEntries -> mapEntries.stream())
+                .forEach(item -> newMap.put(item.key, item.value));
         map = newMap.map;
     }
 
     private T updateExistingLinkedList(final int index, final T key, final T value) {
         LinkedList<MapEntry> currentEntries = map[index];
-        for (MapEntry currentEntry : currentEntries)
+        for (int i = 0; i <  currentEntries.size(); i++) {
+            MapEntry currentEntry = currentEntries.get(i);
             if (currentEntry.key.equals(key)) {
                 T previousValue = currentEntry.value;
-                currentEntry.value = value;
+                map[index].get(i).value = value;
                 return previousValue;
             }
+        }
         map[index].add(new MapEntry(key, value));
         size++;
         return null;
@@ -207,6 +259,13 @@ public class CustomMap<T> {
             17519, 21023, 25229, 30293, 36353, 43627, 52361, 62851, 75431, 90523, 108631, 130363, 156437,
             187751, 225307, 270371, 324449, 389357, 467237, 560689, 672827, 807403, 968897, 1162687, 1395263,
             1674319, 2009191, 2411033, 2893249, 3471899, 4166287, 4999559, 5999471, 7199369 };
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(key, type, size);
+        result = 31 * result + Arrays.hashCode(map);
+        return result;
+    }
 
     public class MapEntry {
         T key;
