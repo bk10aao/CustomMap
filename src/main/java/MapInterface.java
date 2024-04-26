@@ -12,7 +12,7 @@ public interface MapInterface<T> {
      * Check if Map contains Key
      * @param key - item to be searched for in Map.
      * @return boolean true if contains key, else false.
-     * @throws NullPointerException on null item.
+     * @throws NullPointerException on null key.
      */
     boolean containsKey(T key);
 
@@ -34,7 +34,7 @@ public interface MapInterface<T> {
     /**
      * Get Object by key.
      * @param key - key of item to be returned.
-     * @return value associated to key.
+     * @return value associated to key, else null.
      * @throws NullPointerException on null key.
      */
     T get(T key);
@@ -51,7 +51,6 @@ public interface MapInterface<T> {
     /**
      * Get keys as Set.
      * @return Set of keys in map.
-     * @throws NullPointerException on null key.
      */
     Set keySet();
 
@@ -59,7 +58,7 @@ public interface MapInterface<T> {
      * Put item in map
      * @param key - key to map to value
      * @param value - value to be associated to key
-     * @throws IllegalArgumentException on non matching key type or value type
+     * @throws IllegalArgumentException on non-matching key type or value type
      * @throws NullPointerException on null key
      * @return T item for previous key, else null if not previously used
      */
@@ -70,6 +69,7 @@ public interface MapInterface<T> {
      * @param key - key to map to value
      * @param value - value to be associated to key
      * @throws NullPointerException on null key
+     * @throws NullPointerException on null value
      * @return T item for previous key, else null if not previously used
      */
     T putIfAbsent(final T key, final T value);
@@ -98,7 +98,7 @@ public interface MapInterface<T> {
      * @param value - new value to be set
      * @throws NullPointerException on null key
      * @throws NullPointerException on null old value
-     * @return T item previously associated to key
+     * @return T item previously associated to key, else null
      */
     T replace(T key, T value);
 
