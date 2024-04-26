@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class CustomMap<T> {
+public class CustomMap<T> implements MapInterface {
 
     private LinkedList<MapEntry>[] map;
     private final T key;
@@ -38,14 +38,16 @@ public class CustomMap<T> {
         this.size = 0;
     }
 
-    public boolean containsKey(T key) {
+    public boolean containsKey(final Object key) {
+        if(key.equals(null))
+            throw new NullPointerException();
         LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
         if(indexedMapEntry == null)
             return false;
         return indexedMapEntry.stream().anyMatch(entry -> entry.key.equals(key));
     }
 
-    public boolean containsValue(final T value) {
+    public boolean containsValue(final Object value) {
         return Arrays.stream(map)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
@@ -53,7 +55,7 @@ public class CustomMap<T> {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o)
             return true;
         if (o == null || getClass() != o.getClass())
@@ -77,7 +79,7 @@ public class CustomMap<T> {
         return Objects.equals(key, map1.key) && Objects.equals(type, map1.type);
     }
 
-    public T get(final T key) {
+    public T get(final Object key) {
         if(key == null)
             throw new NullPointerException();
         LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
@@ -90,28 +92,26 @@ public class CustomMap<T> {
                                 .orElse(null);
     }
 
-    public T getOrDefault(T key, T defaultValue) {
+    public T getOrDefault(final Object key, final Object defaultValue) {
         if(key == null)
             throw new NullPointerException();
         LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
-        if(indexedMapEntry == null)
-            return null;
         return indexedMapEntry.stream()
                                 .filter(mapEntry -> mapEntry.key.equals(key))
                                 .findFirst()
                                 .map(mapEntry -> mapEntry.value)
-                                .orElse(defaultValue);
+                                .orElse((T) defaultValue);
     }
 
     public Set keySet() {
         return Arrays.stream(map)
                         .filter(Objects::nonNull)
-                        .flatMap(entryList -> entryList.stream())
+                        .flatMap(Collection::stream)
                         .map(entry -> entry.key)
                         .collect(Collectors.toSet());
     }
 
-    public T put(final T key, final T value) {
+    public T put(final Object key, final Object value) {
         if(!key.getClass().equals(this.key) || !value.getClass().equals(this.type))
             throw new IllegalArgumentException();
         if(key == null)
@@ -120,7 +120,7 @@ public class CustomMap<T> {
         LinkedList<MapEntry> indexedEntry = map[index];
         T result = null;
         if(indexedEntry == null)
-            addNewIndexEntry(key, value, index);
+            addNewIndexEntry((T) key, (T) value, index);
         else
             result = updateExistingLinkedList(index, key, value);
         if((double)size / (double)mapSize > LOAD_FACTOR)
@@ -128,7 +128,7 @@ public class CustomMap<T> {
         return result;
     }
 
-    public T putIfAbsent(final T key, final T value) {
+    public T putIfAbsent(final Object key, final Object value) {
         if(key == null || value == null)
             throw new NullPointerException();
         if(!containsKey(key))
@@ -138,7 +138,7 @@ public class CustomMap<T> {
         return null;
     }
 
-    public T remove(final T key) {
+    public T remove(final Object key) {
         if(key == null)
             throw new NullPointerException();
         LinkedList<MapEntry> entryLinkedList = map[Math.abs(key.hashCode()) % mapSize];
@@ -152,7 +152,7 @@ public class CustomMap<T> {
         return null;
     }
 
-    public boolean remove(final T key, final T value) {
+    public boolean remove(final Object key, final Object value) {
         if(key == null || value == null)
             throw new NullPointerException();
         if(containsKey(key)) {
@@ -164,13 +164,13 @@ public class CustomMap<T> {
         return false;
     }
 
-    public T replace(T key, T value) {
+    public T replace(final Object key, final Object value) {
         if(key == null || value == null)
             throw new NullPointerException();
         return containsKey(key) ? put(key, value) : null;
     }
 
-    public boolean replace(T key, T oldValue, T newValue) {
+    public boolean replace(final Object key, final Object oldValue, final Object newValue) {
         if(key == null || oldValue == null || newValue == null)
             throw new NullPointerException();
         if(containsKey(key))
@@ -191,7 +191,7 @@ public class CustomMap<T> {
             return values;
         return Arrays.stream(map)
                         .filter(Objects::nonNull)
-                        .flatMap(item -> item.stream())
+                        .flatMap(Collection::stream)
                         .map(mapEntry -> mapEntry.value)
                         .collect(Collectors.toList());
     }
@@ -218,7 +218,7 @@ public class CustomMap<T> {
         CustomMap<T> newMap = new CustomMap(this.key, this.type, mapSize);
         Arrays.stream(map)
                 .filter(Objects::nonNull)
-                .flatMap(linkedList -> linkedList.stream())
+                .flatMap(Collection::stream)
                 .forEach(entry -> newMap.put(entry.key, entry.value));
         map = newMap.map;
     }
@@ -229,22 +229,22 @@ public class CustomMap<T> {
         CustomMap newMap = new CustomMap(this.key, this.type, mapSize);
         Arrays.stream(map)
                 .filter(Objects::nonNull)
-                .flatMap(mapEntries -> mapEntries.stream())
+                .flatMap(Collection::stream)
                 .forEach(item -> newMap.put(item.key, item.value));
         map = newMap.map;
     }
 
-    private T updateExistingLinkedList(final int index, final T key, final T value) {
+    private T updateExistingLinkedList(final int index, final Object key, final Object value) {
         LinkedList<MapEntry> currentEntries = map[index];
         for (int i = 0; i <  currentEntries.size(); i++) {
             MapEntry currentEntry = currentEntries.get(i);
             if (currentEntry.key.equals(key)) {
                 T previousValue = currentEntry.value;
-                map[index].get(i).value = value;
+                map[index].get(i).value = (T) value;
                 return previousValue;
             }
         }
-        map[index].add(new MapEntry(key, value));
+        map[index].add(new MapEntry((T) key, (T) value));
         size++;
         return null;
     }
