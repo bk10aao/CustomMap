@@ -144,11 +144,9 @@ public class CustomMap<T> implements MapInterface {
         LinkedList<MapEntry> entryLinkedList = map[Math.abs(key.hashCode()) % mapSize];
 
         if(entryLinkedList != null)
-            for (int i = 0; i < entryLinkedList.size(); i++) {
-                MapEntry entry = entryLinkedList.get(i);
-                if (entry.key.equals(key))
+            for (int i = 0; i < entryLinkedList.size(); i++)
+                if (entryLinkedList.get(i).key.equals(key))
                     return removeItem(entryLinkedList, i);
-            }
         return null;
     }
 
@@ -174,10 +172,8 @@ public class CustomMap<T> implements MapInterface {
         if(key == null || oldValue == null || newValue == null)
             throw new NullPointerException();
         if(containsKey(key))
-            if (get(key).equals(oldValue)) {
-                put(key, newValue);
-                return true;
-            }
+            if (get(key).equals(oldValue))
+                return put(key, newValue) != null;
         return false;
     }
 
