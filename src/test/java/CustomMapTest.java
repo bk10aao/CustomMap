@@ -460,4 +460,17 @@ class CustomMapTest {
         assertEquals(10, expectedValues.size());
         assertEquals(expectedValues, values);
     }
+
+    @Test
+    public void givenEmptyMap_on_toString_returns_emptyBraces() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        assertEquals("{ }", map.toString());
+    }
+
+    @Test
+    public void givenMapOf_5_values_on_intKey_intValue_on_toString_returns_correctString() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        for(int i = 0; i < 5; i++) map.put(i, i * 10);
+        assertEquals("{ [0, 0], [1, 10], [2, 20], [3, 30], [4, 40] }", map.toString());
+    }
 }

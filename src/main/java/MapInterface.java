@@ -121,6 +121,12 @@ public interface MapInterface<T> {
     int size();
 
     /**
+     * Get String representation of Map
+     * @return - String representation of Map
+     */
+    String toString();
+
+    /**
      * Get all values associated to all keys in Map
      * @return Collection of all values associated to all keys in Map
      */

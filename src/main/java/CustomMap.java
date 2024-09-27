@@ -26,7 +26,7 @@ public class CustomMap<T> implements MapInterface {
 
     private CustomMap(final T key, final T value, final int mapSize) {
         this.map = new LinkedList[mapSize];
-        this.mapSize = mapSize;
+        this.mapSize = getClosestPrime(mapSize);
         this.key = key;
         this.type = value;
     }
@@ -103,7 +103,14 @@ public class CustomMap<T> implements MapInterface {
                                 .orElse((T) defaultValue);
     }
 
-    public Set keySet() {
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(key, type, size);
+        result = 31 * result + Arrays.hashCode(map);
+        return result;
+    }
+
+    public Set<T> keySet() {
         return Arrays.stream(map)
                         .filter(Objects::nonNull)
                         .flatMap(Collection::stream)
@@ -181,6 +188,22 @@ public class CustomMap<T> implements MapInterface {
         return this.size;
     }
 
+    @Override
+    public String toString() {
+        if(size == 0) return "{ }";
+        StringBuilder stringBuilder = new StringBuilder("{ ");
+        for(T key : keySet()) {
+            if(stringBuilder.length() > 2)
+                stringBuilder.append(", ");
+            stringBuilder.append("[")
+                            .append(key)
+                            .append(", ")
+                            .append(get(key))
+                            .append("]");
+        }
+        return stringBuilder.append(" }").toString();
+    }
+
     public Collection<T> values() {
         Collection<T> values = new ArrayList<>();
         if(size == 0)
@@ -190,14 +213,6 @@ public class CustomMap<T> implements MapInterface {
                         .flatMap(Collection::stream)
                         .map(mapEntry -> mapEntry.value)
                         .collect(Collectors.toList());
-    }
-
-    private T removeItem(final LinkedList<MapEntry> entryLinkedList, final int index) {
-        MapEntry removed = entryLinkedList.remove(index);
-        size--;
-        if(mapSize > 17 && size <= mapSize / 4)
-            reduce();
-        return removed.value;
     }
 
     private void addNewIndexEntry(final T key, final T value, final int index) {
@@ -219,6 +234,16 @@ public class CustomMap<T> implements MapInterface {
         map = newMap.map;
     }
 
+    private int getClosestPrime(int mapSize) {
+        for(int i = 0; i < primes.length; i++) {
+            if(primes[i] > mapSize) {
+                primesIndex = i;
+                return primes[i];
+            }
+        }
+        return 0;
+    }
+
     private void reduce() {
         primesIndex = (primesIndex / 2);
         mapSize = primes[primesIndex];
@@ -228,6 +253,14 @@ public class CustomMap<T> implements MapInterface {
                 .flatMap(Collection::stream)
                 .forEach(item -> newMap.put(item.key, item.value));
         map = newMap.map;
+    }
+
+    private T removeItem(final LinkedList<MapEntry> entryLinkedList, final int index) {
+        MapEntry removed = entryLinkedList.remove(index);
+        size--;
+        if(mapSize > 17 && size <= mapSize / 4)
+            reduce();
+        return removed.value;
     }
 
     private T updateExistingLinkedList(final int index, final Object key, final Object value) {
@@ -255,13 +288,6 @@ public class CustomMap<T> implements MapInterface {
             17519, 21023, 25229, 30293, 36353, 43627, 52361, 62851, 75431, 90523, 108631, 130363, 156437,
             187751, 225307, 270371, 324449, 389357, 467237, 560689, 672827, 807403, 968897, 1162687, 1395263,
             1674319, 2009191, 2411033, 2893249, 3471899, 4166287, 4999559, 5999471, 7199369 };
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hash(key, type, size);
-        result = 31 * result + Arrays.hashCode(map);
-        return result;
-    }
 
     public class MapEntry {
         T key;
