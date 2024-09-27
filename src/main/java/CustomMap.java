@@ -236,7 +236,7 @@ public class CustomMap<T> implements MapInterface {
 
     private int getClosestPrime(int mapSize) {
         for(int i = 0; i < primes.length; i++) {
-            if(primes[i] > mapSize) {
+            if(primes[i] >= mapSize) {
                 primesIndex = i;
                 return primes[i];
             }

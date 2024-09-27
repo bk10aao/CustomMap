@@ -27,7 +27,6 @@ class CustomMapTest {
         assertThrows(NullPointerException.class, ()-> map.put(null, 10));
     }
 
-
     @Test
     public void createMap_andAddOneItem_returnsSizeOf_1() {
         CustomMap map = new CustomMap(String.class, String.class);
@@ -200,6 +199,7 @@ class CustomMapTest {
         CustomMap map = new CustomMap(String.class, Integer.class);
         assertThrows(NullPointerException.class, () -> map.remove(null, null));
     }
+
     @Test
     public void givenMap_onRemove_key_value_thatDoesNotExist_returns_false() {
         CustomMap map = new CustomMap(String.class, Integer.class);
