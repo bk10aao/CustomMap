@@ -18,4 +18,5 @@ Implementation of a Map using an array
 14. `T replace(T key, T value)` - replace the value for associated key. Returns item previously associated to key, else false. throws NullPointerException on null key or value.
 15. `boolean replace(T key, T oldValue, T newValue)` - replaces value in map if associated value matches previous value. Returns true if successful. Throws NullPointerException on null key, oldValue or newValue.
 16. `int size()` - returns number of items in map.
-17. `Collection<T> values()` - returns a collection of all values associated to keys in map.
+17. `String toString()` - returns string representation of map.
+18. `Collection<T> values()` - returns a collection of all values associated to keys in map.

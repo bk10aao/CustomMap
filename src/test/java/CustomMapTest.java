@@ -27,7 +27,6 @@ class CustomMapTest {
         assertThrows(NullPointerException.class, ()-> map.put(null, 10));
     }
 
-
     @Test
     public void createMap_andAddOneItem_returnsSizeOf_1() {
         CustomMap map = new CustomMap(String.class, String.class);
@@ -200,6 +199,7 @@ class CustomMapTest {
         CustomMap map = new CustomMap(String.class, Integer.class);
         assertThrows(NullPointerException.class, () -> map.remove(null, null));
     }
+
     @Test
     public void givenMap_onRemove_key_value_thatDoesNotExist_returns_false() {
         CustomMap map = new CustomMap(String.class, Integer.class);
@@ -459,5 +459,18 @@ class CustomMapTest {
         assertEquals(10, values.size());
         assertEquals(10, expectedValues.size());
         assertEquals(expectedValues, values);
+    }
+
+    @Test
+    public void givenEmptyMap_on_toString_returns_emptyBraces() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        assertEquals("{ }", map.toString());
+    }
+
+    @Test
+    public void givenMapOf_5_values_on_intKey_intValue_on_toString_returns_correctString() {
+        CustomMap map = new CustomMap(Integer.class, Integer.class);
+        for(int i = 0; i < 5; i++) map.put(i, i * 10);
+        assertEquals("{ [0, 0], [1, 10], [2, 20], [3, 30], [4, 40] }", map.toString());
     }
 }
