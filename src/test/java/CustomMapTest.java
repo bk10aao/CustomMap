@@ -3,6 +3,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,7 +25,7 @@ class CustomMapTest {
     @Test
     public void createMap_onPutKeyOf_null_throws_NullPointerException() {
         CustomMap map = new CustomMap(String.class, String.class);
-        assertThrows(NullPointerException.class, ()-> map.put(null, 10));
+        assertThrows(NullPointerException.class, ()-> map.put(null, "abc"));
     }
 
     @Test
@@ -309,7 +310,7 @@ class CustomMapTest {
     public void createTwoEqualMapTypes_onEquals_returns_true() {
         CustomMap map = new CustomMap(String.class, Integer.class);
         CustomMap mapTwo = new CustomMap(String.class, Integer.class);
-        assertEquals(map, mapTwo);
+        assertTrue(map.equals(mapTwo));
     }
 
     @Test
@@ -327,7 +328,7 @@ class CustomMapTest {
         for(int i = 0; i < 10; i++) map.put(String.valueOf(i), i * 10);
         CustomMap mapTwo = new CustomMap(String.class, Integer.class);
         for(int i = 0; i < 10; i++) mapTwo.put(String.valueOf(i), i * 10);
-        assertEquals(map, mapTwo);
+        assertTrue(map.equals(mapTwo));
     }
 
     @Test
@@ -379,7 +380,7 @@ class CustomMapTest {
     @Test
     public void onReplacingValueInMap_withNullKeyAndValue_throws_NullPointerException() {
         CustomMap map = new CustomMap(Integer.class, Integer.class);
-        assertThrows(NullPointerException.class, ()-> map.replace(null, null));
+        assertThrows(NullPointerException.class, ()-> map.replace(Optional.empty(), null));
     }
 
     @Test

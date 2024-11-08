@@ -6,25 +6,25 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class CustomMap<T> implements MapInterface {
+public class CustomMap<K, V> implements Map<K, V> {
 
     private LinkedList<MapEntry>[] map;
-    private final T key;
-    private final T type;
+    private final K key;
+    private final V type;
 
     private int mapSize;
     private int size = 0;
     private static final double LOAD_FACTOR = 0.75;
     private int primesIndex = 0;
 
-    public CustomMap(final T key, final T value) {
+    public CustomMap(final K key, final V value) {
         this.map = new LinkedList[primes[primesIndex]];
         this.mapSize = primes[0];
         this.key = key;
         this.type = value;
     }
 
-    private CustomMap(final T key, final T value, final int mapSize) {
+    private CustomMap(final K key, final V value, final int mapSize) {
         this.map = new LinkedList[mapSize];
         this.mapSize = getClosestPrime(mapSize);
         this.key = key;
@@ -32,13 +32,13 @@ public class CustomMap<T> implements MapInterface {
     }
 
     public void clear() {
+        this.primesIndex = 0;
         this.map = new LinkedList[primes[primesIndex]];
         this.mapSize = primes[0];
-        this.primesIndex = 0;
         this.size = 0;
     }
 
-    public boolean containsKey(final Object key) {
+    public boolean containsKey(final K key) {
         if(key.equals(null))
             throw new NullPointerException();
         LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
@@ -47,7 +47,7 @@ public class CustomMap<T> implements MapInterface {
         return indexedMapEntry.stream().anyMatch(entry -> entry.key.equals(key));
     }
 
-    public boolean containsValue(final Object value) {
+    public boolean containsValue(final V value) {
         return Arrays.stream(map)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
@@ -55,16 +55,15 @@ public class CustomMap<T> implements MapInterface {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(final CustomMap<K, V> o) {
         if (this == o)
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        CustomMap<?> map1 = (CustomMap<?>) o;
-        if(size != map1.size)
+        if(size != o.size)
             return false;
-        T[] mapValues = (T[]) Arrays.stream(map).toArray();
-        T[] map1Values = (T[]) Arrays.stream(map1.map).toArray();
+        V[] mapValues = (V[]) Arrays.stream(map).toArray();
+        V[] map1Values = (V[]) Arrays.stream(o.map).toArray();
         for(int i = 0; i < mapValues.length; i++) {
             LinkedList<MapEntry> first = map[i];
             LinkedList<MapEntry> second = (LinkedList<MapEntry>) map1Values[i];
@@ -76,10 +75,10 @@ public class CustomMap<T> implements MapInterface {
                 if (!first.get(x).key.equals(second.get(x).key) || !first.get(x).value.equals(second.get(x).value))
                     return false;
         }
-        return Objects.equals(key, map1.key) && Objects.equals(type, map1.type);
+        return Objects.equals(key, o.key) && Objects.equals(type, o.type);
     }
 
-    public T get(final Object key) {
+    public V get(final K key) {
         if(key == null)
             throw new NullPointerException();
         LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
@@ -92,7 +91,7 @@ public class CustomMap<T> implements MapInterface {
                                 .orElse(null);
     }
 
-    public T getOrDefault(final Object key, final Object defaultValue) {
+    public V getOrDefault(final K key, final V defaultValue) {
         if(key == null)
             throw new NullPointerException();
         LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
@@ -100,7 +99,7 @@ public class CustomMap<T> implements MapInterface {
                                 .filter(mapEntry -> mapEntry.key.equals(key))
                                 .findFirst()
                                 .map(mapEntry -> mapEntry.value)
-                                .orElse((T) defaultValue);
+                                .orElse(defaultValue);
     }
 
     @Override
@@ -110,7 +109,7 @@ public class CustomMap<T> implements MapInterface {
         return result;
     }
 
-    public Set<T> keySet() {
+    public Set<K> keySet() {
         return Arrays.stream(map)
                         .filter(Objects::nonNull)
                         .flatMap(Collection::stream)
@@ -118,16 +117,16 @@ public class CustomMap<T> implements MapInterface {
                         .collect(Collectors.toSet());
     }
 
-    public T put(final Object key, final Object value) {
+    public V put(final K key, final V value) {
         if(!key.getClass().equals(this.key) || !value.getClass().equals(this.type))
             throw new IllegalArgumentException();
         if(key == null)
             throw new NullPointerException();
         int index = Math.abs(key.hashCode()) % mapSize;
         LinkedList<MapEntry> indexedEntry = map[index];
-        T result = null;
+        V result = null;
         if(indexedEntry == null)
-            addNewIndexEntry((T) key, (T) value, index);
+            addNewIndexEntry(key, value, index);
         else
             result = updateExistingLinkedList(index, key, value);
         if((double)size / (double)mapSize > LOAD_FACTOR)
@@ -135,7 +134,7 @@ public class CustomMap<T> implements MapInterface {
         return result;
     }
 
-    public T putIfAbsent(final Object key, final Object value) {
+    public V putIfAbsent(final K key, final V value) {
         if(key == null || value == null)
             throw new NullPointerException();
         if(!containsKey(key))
@@ -145,7 +144,7 @@ public class CustomMap<T> implements MapInterface {
         return null;
     }
 
-    public T remove(final Object key) {
+    public V remove(final K key) {
         if(key == null)
             throw new NullPointerException();
         LinkedList<MapEntry> entryLinkedList = map[Math.abs(key.hashCode()) % mapSize];
@@ -157,7 +156,7 @@ public class CustomMap<T> implements MapInterface {
         return null;
     }
 
-    public boolean remove(final Object key, final Object value) {
+    public boolean remove(final K key, final V value) {
         if(key == null || value == null)
             throw new NullPointerException();
         if(containsKey(key)) {
@@ -169,13 +168,13 @@ public class CustomMap<T> implements MapInterface {
         return false;
     }
 
-    public T replace(final Object key, final Object value) {
+    public V replace(final K key, final V value) {
         if(key == null || value == null)
             throw new NullPointerException();
         return containsKey(key) ? put(key, value) : null;
     }
 
-    public boolean replace(final Object key, final Object oldValue, final Object newValue) {
+    public boolean replace(final K key, final V oldValue, final V newValue) {
         if(key == null || oldValue == null || newValue == null)
             throw new NullPointerException();
         if(containsKey(key))
@@ -192,7 +191,7 @@ public class CustomMap<T> implements MapInterface {
     public String toString() {
         if(size == 0) return "{ }";
         StringBuilder stringBuilder = new StringBuilder("{ ");
-        for(T key : keySet()) {
+        for(K key : keySet()) {
             if(stringBuilder.length() > 2)
                 stringBuilder.append(", ");
             stringBuilder.append("[")
@@ -204,8 +203,8 @@ public class CustomMap<T> implements MapInterface {
         return stringBuilder.append(" }").toString();
     }
 
-    public Collection<T> values() {
-        Collection<T> values = new ArrayList<>();
+    public Collection<V> values() {
+        Collection<V> values = new ArrayList<>();
         if(size == 0)
             return values;
         return Arrays.stream(map)
@@ -215,7 +214,7 @@ public class CustomMap<T> implements MapInterface {
                         .collect(Collectors.toList());
     }
 
-    private void addNewIndexEntry(final T key, final T value, final int index) {
+    private void addNewIndexEntry(final K key, final V value, final int index) {
         map[index] = new LinkedList<>();
         LinkedList<MapEntry> entryIndex = map[index];
         MapEntry mapEntry = new MapEntry(key, value);
@@ -226,7 +225,7 @@ public class CustomMap<T> implements MapInterface {
 
     private void expand() {
         mapSize = primes[++primesIndex];
-        CustomMap<T> newMap = new CustomMap(this.key, this.type, mapSize);
+        CustomMap<K, V> newMap = new CustomMap(this.key, this.type, mapSize);
         Arrays.stream(map)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
@@ -255,7 +254,7 @@ public class CustomMap<T> implements MapInterface {
         map = newMap.map;
     }
 
-    private T removeItem(final LinkedList<MapEntry> entryLinkedList, final int index) {
+    private V removeItem(final LinkedList<MapEntry> entryLinkedList, final int index) {
         MapEntry removed = entryLinkedList.remove(index);
         size--;
         if(mapSize > 17 && size <= mapSize / 4)
@@ -263,17 +262,17 @@ public class CustomMap<T> implements MapInterface {
         return removed.value;
     }
 
-    private T updateExistingLinkedList(final int index, final Object key, final Object value) {
+    private V updateExistingLinkedList(final int index, final K key, final V value) {
         LinkedList<MapEntry> currentEntries = map[index];
         for (int i = 0; i <  currentEntries.size(); i++) {
             MapEntry currentEntry = currentEntries.get(i);
             if (currentEntry.key.equals(key)) {
-                T previousValue = currentEntry.value;
-                map[index].get(i).value = (T) value;
+                V previousValue = currentEntry.value;
+                map[index].get(i).value = value;
                 return previousValue;
             }
         }
-        map[index].add(new MapEntry((T) key, (T) value));
+        map[index].add(new MapEntry(key, value));
         size++;
         return null;
     }
@@ -290,10 +289,10 @@ public class CustomMap<T> implements MapInterface {
             1674319, 2009191, 2411033, 2893249, 3471899, 4166287, 4999559, 5999471, 7199369 };
 
     public class MapEntry {
-        T key;
-        T value;
+        final K key;
+        V value;
 
-        MapEntry(final T key, T value) {
+        MapEntry(final K key, V value) {
             this.key = key;
             this.value = value;
         }
