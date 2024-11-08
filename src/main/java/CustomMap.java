@@ -81,20 +81,16 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V get(final K key) {
         if(key == null)
             throw new NullPointerException();
-        LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
-        if(indexedMapEntry == null)
-            return null;
-        return indexedMapEntry.stream()
-                                .filter(mapEntry -> mapEntry.key.equals(key))
-                                .findFirst()
-                                .map(mapEntry -> mapEntry.value)
-                                .orElse(null);
+        return getOrDefault(key, null);
     }
 
     public V getOrDefault(final K key, final V defaultValue) {
         if(key == null)
             throw new NullPointerException();
         LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
+        if(indexedMapEntry == null) {
+            return defaultValue;
+        }
         return indexedMapEntry.stream()
                                 .filter(mapEntry -> mapEntry.key.equals(key))
                                 .findFirst()
