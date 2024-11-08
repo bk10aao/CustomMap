@@ -100,9 +100,7 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(key, type, size);
-        result = 31 * result + Arrays.hashCode(map);
-        return result;
+        return 31 * Objects.hash(key, type, size)+ Arrays.hashCode(map);
     }
 
     public Set<K> keySet() {
