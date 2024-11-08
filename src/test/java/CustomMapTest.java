@@ -25,7 +25,7 @@ class CustomMapTest {
     @Test
     public void createMap_onPutKeyOf_null_throws_NullPointerException() {
         CustomMap map = new CustomMap(String.class, String.class);
-        assertThrows(NullPointerException.class, ()-> map.put(null, 10));
+        assertThrows(NullPointerException.class, ()-> map.put(null, "abc"));
     }
 
     @Test

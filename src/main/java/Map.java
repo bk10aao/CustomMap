@@ -1,7 +1,7 @@
 import java.util.Collection;
 import java.util.Set;
 
-public interface MapInterface<K, V> {
+public interface Map<K, V> {
 
     /**
      * Clear all items from Map.
