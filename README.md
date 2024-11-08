@@ -1,7 +1,7 @@
 # Map
 Implementation of a Map using an array
 
-# Methods
+## Methods
 1. `CustomMap(K key, V value)` - constructor.
 2. `CustomMap(K key, V value, int mapSize)` - constructor.
 3. `void clear()` - resets map to empty.
@@ -20,3 +20,9 @@ Implementation of a Map using an array
 16. `int size()` - returns number of items in map.
 17. `String toString()` - returns string representation of map.
 18. `Collection<V> values()` - returns a collection of all values associated to keys in map.
+
+## Build and Test
+
+1. To build and test the project run command `./gradlew clean build`
+2. To test the project run command `gradle test --tests CustomMapTest`
+
