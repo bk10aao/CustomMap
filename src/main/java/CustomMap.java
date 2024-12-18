@@ -25,8 +25,8 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     private CustomMap(final K key, final V value, final int mapSize) {
-        this.map = new LinkedList[mapSize];
         this.mapSize = getClosestPrime(mapSize);
+        this.map = new LinkedList[mapSize];
         this.key = key;
         this.type = value;
     }
