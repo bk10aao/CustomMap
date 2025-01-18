@@ -14,7 +14,7 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     private int mapSize;
     private int size = 0;
-    private static final double LOAD_FACTOR = 0.75;
+    private static final double LOAD_FACTOR = 0.75f;
     private int primesIndex = 0;
 
     public CustomMap(final K key, final V value) {
@@ -228,12 +228,11 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     private int getClosestPrime(int mapSize) {
-        for(int i = 0; i < primes.length; i++) {
-            if(primes[i] >= mapSize) {
+        for(int i = 0; i < primes.length; i++)
+            if (primes[i] >= mapSize) {
                 primesIndex = i;
                 return primes[i];
             }
-        }
         return 0;
     }
 

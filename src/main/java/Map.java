@@ -20,7 +20,6 @@ public interface Map<K, V> {
      * Check if Map contains Value
      * @param value - value to be searched for in Map.
      * @return boolean true if contains value, else false.
-     * @throws NullPointerException on null value.
      */
     boolean containsValue(V value);
 
