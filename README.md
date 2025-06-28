@@ -27,3 +27,45 @@ Implementation of a Map using an array
 1. To build and test the project run command `./gradlew clean build`
 2. To test the project run command `gradle test --tests CustomMapTest`
 
+## Time Complexity Comparison
+
+| Method           | CustomMap Time Complexity           | HashMap Time Complexity              | Winner          |
+|------------------|-----------------------------------|------------------------------------|-----------------|
+| **clear()**      | O(m)                              | O(m)                               | Tie             |
+| **containsKey()** | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
+| **containsValue()** | O(n)                            | O(n)                              | Tie             |
+| **expand()**     | O(m + n)                         | O(m + n)                          | Tie             |
+| **get()**        | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
+| **keySet()**     | O(n)                             | O(n)                              | Tie             |
+| **put()**        | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
+| **putIfAbsent()** | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
+| **remove()**     | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
+| **replace(K, V)** | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
+| **values()**     | O(n)                             | O(n)                              | Tie             |
+
+---
+
+## Space Complexity Comparison
+
+| Method           | CustomMap Space Complexity        | HashMap Space Complexity           | Winner          |
+|------------------|---------------------------------|----------------------------------|-----------------|
+| **clear()**      | O(m)                            | O(m)                             | Tie             |
+| **containsKey()** | O(1)                           | O(1)                            | Tie             |
+| **containsValue()** | O(1)                         | O(1)                            | Tie             |
+| **expand()**     | O(n + m)                       | O(n + m)                        | Tie             |
+| **get()**        | O(1)                           | O(1)                            | Tie             |
+| **keySet()**     | O(n)                           | O(n)                            | Tie             |
+| **put()**        | O(1) amortized                 | O(1) amortized                  | Tie             |
+| **putIfAbsent()** | O(1) amortized                 | O(1) amortized                  | Tie             |
+| **remove()**     | O(1)                           | O(1)                            | Tie             |
+| **replace(K, V)** | O(1)                           | O(1)                            | Tie             |
+| **values()**     | O(n)                           | O(n)                            | Tie             |
+
+---
+
+## Notes:
+
+- *n* = number of entries (key-value pairs)
+- *m* = number of buckets (size of internal array)
+
+![Combined Performance Charts](PerformanceTesting//All_Map_Performance_Comparisons.png)

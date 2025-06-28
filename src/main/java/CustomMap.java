@@ -6,7 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class CustomMap<K, V> implements Map<K, V> {
+public class CustomMap<K, V> implements CustomMapInterface<K, V> {
 
     private LinkedList<MapEntry>[] map;
     private final K key;
