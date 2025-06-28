@@ -153,9 +153,13 @@ public class CustomMap<K, V> implements Map<K, V> {
         if(key == null || value == null)
             throw new NullPointerException();
         if(containsKey(key)) {
-            if (map[key.hashCode() % mapSize].get(primesIndex).value.equals(value)) {
-                map[key.hashCode() % mapSize].remove(key);
-                return true;
+            LinkedList<MapEntry> currentEntry = map[key.hashCode() % mapSize];
+            for(MapEntry entry : currentEntry) {
+                if(entry.value.equals(value)) {
+                    currentEntry.remove(entry);
+                    map[key.hashCode() % mapSize] = currentEntry;
+                    return true;
+                }
             }
         }
         return false;
