@@ -14,7 +14,7 @@ public interface CustomMapInterface<K, V> {
      * @return boolean true if contains key, else false.
      * @throws NullPointerException on null key.
      */
-    boolean containsKey(K key);
+    boolean containsKey(Object key);
 
     /**
      * Check if Map contains Value
@@ -25,10 +25,10 @@ public interface CustomMapInterface<K, V> {
 
     /**
      * Check if Map is equal to provided map
-     * @param map - map to be compared to.
+     * @param o - Object to be compared to.
      * @return boolean true if equals, else false.
      */
-     boolean equals(CustomMap<K, V> map);
+     boolean equals(Object o);
 
     /**
      * Get Value by key.
@@ -45,7 +45,7 @@ public interface CustomMapInterface<K, V> {
      * @return value associated to key, or default value.
      * @throws NullPointerException on null key.
      */
-    V getOrDefault(K key, V defaultValue);
+    V getOrDefault(Object key, V defaultValue);
 
     /**
      * Get hashcode for Map.

@@ -1,34 +1,35 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class CustomMap<K, V> implements CustomMapInterface<K, V> {
 
     private LinkedList<MapEntry>[] map;
-    private final K key;
-    private final V type;
+    private final Class<K> key;
+    private final Class<V> value;
 
     private int mapSize;
     private int size = 0;
     private static final double LOAD_FACTOR = 0.75f;
     private int primesIndex = 0;
 
-    public CustomMap(final K key, final V value) {
+    public CustomMap(final Class<K> key, final Class<V> value) {
         this.map = new LinkedList[primes[0]];
         this.mapSize = primes[0];
         this.key = key;
-        this.type = value;
+        this.value = value;
     }
 
-    private CustomMap(final K key, final V value, final int mapSize) {
+    private CustomMap(final Class<K> key, final Class<V> value, final int mapSize) {
         this.mapSize = getClosestPrime(mapSize);
         this.map = new LinkedList[mapSize];
         this.key = key;
-        this.type = value;
+        this.value = value;
     }
 
     public void clear() {
@@ -38,91 +39,95 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
         this.size = 0;
     }
 
-    public boolean containsKey(final K key) {
-        if(key.equals(null))
+    public boolean containsKey(Object key) { // Change from K to Object
+        if (key == null)
             throw new NullPointerException();
-        LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
-        if(indexedMapEntry == null)
+        LinkedList<MapEntry> indexedMapEntry = map[hash((K) key)]; // Cast key to K for hash
+        if (indexedMapEntry == null)
             return false;
-        return indexedMapEntry.stream().anyMatch(entry -> entry.key.equals(key));
+        for (MapEntry entry : indexedMapEntry) {
+            if (entry.key.equals(key))
+                return true;
+        }
+        return false;
     }
 
     public boolean containsValue(final V value) {
-        return Arrays.stream(map)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .anyMatch(entry -> entry.value.equals(value));
+        for (LinkedList<MapEntry> mapEntries : map)
+            if (mapEntries != null)
+                for (MapEntry entry : mapEntries)
+                    if (Objects.equals(entry.value, value))
+                        return true;
+        return false;
     }
 
     @Override
-    public boolean equals(final CustomMap<K, V> o) {
+    public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (o == null || getClass() != o.getClass())
+        if (!(o instanceof CustomMap<?, ?> other))
             return false;
-        if(size != o.size)
+        if (size != other.size())
             return false;
-        V[] mapValues = (V[]) Arrays.stream(map).toArray();
-        V[] map1Values = (V[]) Arrays.stream(o.map).toArray();
-        for(int i = 0; i < mapValues.length; i++) {
-            LinkedList<MapEntry> first = map[i];
-            LinkedList<MapEntry> second = (LinkedList<MapEntry>) map1Values[i];
-            if(first == null && second == null)
-                continue;
-            else if(first == null || second == null)
+        if (!key.equals(other.key) || !value.equals(other.value))
+            return false;
+        for (K key : keySet()) {
+            if (!other.containsKey(key))
                 return false;
-            for (int x = 0; x < first.size(); x++)
-                if (!first.get(x).key.equals(second.get(x).key) || !first.get(x).value.equals(second.get(x).value))
-                    return false;
+            if (!Objects.equals(get(key), other.getOrDefault(key, null)))
+                return false;
         }
-        return Objects.equals(key, o.key) && Objects.equals(type, o.type);
+        return true;
     }
 
     public V get(final K key) {
-        if(key == null)
-            throw new NullPointerException();
         return getOrDefault(key, null);
     }
 
-    public V getOrDefault(final K key, final V defaultValue) {
-        if(key == null)
+    public V getOrDefault(Object key, V defaultValue) { // Change key from K to Object
+        if (key == null)
             throw new NullPointerException();
-        LinkedList<MapEntry> indexedMapEntry = map[Math.abs(key.hashCode()) % mapSize];
-        if(indexedMapEntry == null)
+        LinkedList<MapEntry> indexedMapEntry = map[hash((K) key)]; // Cast key to K for hash
+        if (indexedMapEntry == null)
             return defaultValue;
-        return indexedMapEntry.stream()
-                                .filter(mapEntry -> mapEntry.key.equals(key))
-                                .findFirst()
-                                .map(mapEntry -> mapEntry.value)
-                                .orElse(defaultValue);
+        for (MapEntry entry : indexedMapEntry)
+            if (entry.key.equals(key))
+                return entry.value;
+        return defaultValue;
     }
 
     @Override
     public int hashCode() {
-        return 31 * Objects.hash(key, type, size)+ Arrays.hashCode(map);
+        int result = Objects.hash(key, value, size);
+        for (LinkedList<MapEntry> entryLinkedList : map)
+            if (entryLinkedList != null)
+                for (MapEntry entry : entryLinkedList)
+                    result = 31 * result + Objects.hash(entry.key, entry.value);
+        return result;
     }
 
     public Set<K> keySet() {
-        return Arrays.stream(map)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .map(entry -> entry.key)
-                        .collect(Collectors.toSet());
+        Set<K> set = new HashSet<>();
+        for (LinkedList<MapEntry> mapEntries : map)
+            if (mapEntries != null)
+                for (MapEntry entry : mapEntries)
+                    set.add(entry.key);
+        return set;
     }
 
     public V put(final K key, final V value) {
-        if(!key.getClass().equals(this.key) || !value.getClass().equals(this.type))
+        if (!this.key.isInstance(key))
             throw new IllegalArgumentException();
-        if(key == null)
-            throw new NullPointerException();
-        int index = Math.abs(key.hashCode()) % mapSize;
+        if (value != null && !this.value.isInstance(value))
+            throw new IllegalArgumentException();
+        int index = hash(key);
         LinkedList<MapEntry> indexedEntry = map[index];
         V result = null;
-        if(indexedEntry == null)
+        if (indexedEntry == null)
             addNewIndexEntry(key, value, index);
         else
             result = updateExistingLinkedList(index, key, value);
-        if((double)size / (double)mapSize > LOAD_FACTOR)
+        if ((double) size / (double) mapSize > LOAD_FACTOR)
             expand();
         return result;
     }
@@ -130,21 +135,16 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
     public V putIfAbsent(final K key, final V value) {
         if(key == null || value == null)
             throw new NullPointerException();
-        if(!containsKey(key))
-            put(key, value);
-        else
-            return get(key);
-        return null;
+        return !containsKey(key) ? put(key, value) : getOrDefault(key, null);
     }
 
     public V remove(final K key) {
         if(key == null)
             throw new NullPointerException();
-        LinkedList<MapEntry> entryLinkedList = map[Math.abs(key.hashCode()) % mapSize];
-
+        LinkedList<MapEntry> entryLinkedList = map[hash(key)];
         if(entryLinkedList != null)
             for (int i = 0; i < entryLinkedList.size(); i++)
-                if (entryLinkedList.get(i).key.equals(key))
+                if(entryLinkedList.get(i).key.equals(key))
                     return removeItem(entryLinkedList, i);
         return null;
     }
@@ -153,11 +153,13 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
         if(key == null || value == null)
             throw new NullPointerException();
         if(containsKey(key)) {
-            LinkedList<MapEntry> currentEntry = map[key.hashCode() % mapSize];
+            LinkedList<MapEntry> currentEntry = map[hash(key)];
             for(MapEntry entry : currentEntry) {
                 if(entry.value.equals(value)) {
                     currentEntry.remove(entry);
-                    map[key.hashCode() % mapSize] = currentEntry;
+                    size--;
+                    if (mapSize > 17 && size <= mapSize / 4)
+                        reduce();
                     return true;
                 }
             }
@@ -175,7 +177,7 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
         if(key == null || oldValue == null || newValue == null)
             throw new NullPointerException();
         if(containsKey(key))
-            if (get(key).equals(oldValue))
+            if(get(key).equals(oldValue))
                 return put(key, newValue) != null;
         return false;
     }
@@ -186,43 +188,40 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
 
     @Override
     public String toString() {
-        if(size == 0) return "{ }";
-        StringBuilder stringBuilder = new StringBuilder("{ ");
-        for(K key : keySet()) {
-            if(stringBuilder.length() > 2)
-                stringBuilder.append(", ");
-            stringBuilder.append("[")
-                            .append(key)
-                            .append(", ")
-                            .append(get(key))
-                            .append("]");
-        }
-        return stringBuilder.append(" }").toString();
+        if(size == 0)
+            return "{}";
+        StringBuilder stringBuilder = new StringBuilder("{");
+        boolean first = true;
+        for(LinkedList<MapEntry> entryLinkedList : map)
+            if(entryLinkedList != null)
+                for (MapEntry entry : entryLinkedList) {
+                    if (!first)
+                        stringBuilder.append(", ");
+                    stringBuilder.append("[").append(entry.key).append(", ").append(entry.value).append("]");
+                    first = false;
+            }
+        return stringBuilder.append("}").toString();
     }
 
     public Collection<V> values() {
-        Collection<V> values = new ArrayList<>();
-        if(size == 0)
-            return values;
-        return Arrays.stream(map)
-                        .filter(Objects::nonNull)
-                        .flatMap(Collection::stream)
-                        .map(mapEntry -> mapEntry.value)
-                        .collect(Collectors.toList());
+        List<V> list = new ArrayList<>();
+        for (LinkedList<MapEntry> mapEntries : map)
+            if (mapEntries != null)
+                for (MapEntry mapEntry : mapEntries)
+                    list.add(mapEntry.value);
+        return list;
     }
 
     private void addNewIndexEntry(final K key, final V value, final int index) {
-        map[index] = new LinkedList<>();
-        LinkedList<MapEntry> entryIndex = map[index];
-        MapEntry mapEntry = new MapEntry(key, value);
-        entryIndex.add(mapEntry);
+        LinkedList<MapEntry> entryIndex = new LinkedList<>();
+        entryIndex.add(new MapEntry(key, value));
         map[index] = entryIndex;
         size++;
     }
 
     private void expand() {
         mapSize = primes[++primesIndex];
-        CustomMap<K, V> newMap = new CustomMap(this.key, this.type, mapSize);
+        CustomMap<K, V> newMap = new CustomMap<>(key, value, mapSize);
         Arrays.stream(map)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
@@ -232,17 +231,19 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
 
     private int getClosestPrime(int mapSize) {
         for(int i = 0; i < primes.length; i++)
-            if (primes[i] >= mapSize) {
-                primesIndex = i;
-                return primes[i];
-            }
-        return 0;
+            if(primes[i] >= mapSize)
+                return primes[primesIndex = i];
+        return primes[0];
+    }
+
+    private int hash(K key) {
+        return (key.hashCode() & 0x7FFFFFFF) % mapSize;
     }
 
     private void reduce() {
         primesIndex = (primesIndex / 2);
         mapSize = primes[primesIndex];
-        CustomMap newMap = new CustomMap(this.key, this.type, mapSize);
+        CustomMap newMap = new CustomMap<>(key, value, mapSize);
         Arrays.stream(map)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
