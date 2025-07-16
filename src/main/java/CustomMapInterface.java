@@ -54,6 +54,12 @@ public interface CustomMapInterface<K, V> {
     int hashCode();
 
     /**
+     * Get hashcode for Map.
+     * @return hashcode of map.
+     */
+    int hashCode();
+
+    /**
      * Get keys as Set.
      * @return Set of keys in map.
      */
