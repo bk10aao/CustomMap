@@ -237,7 +237,8 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
     }
 
     private int hash(K key) {
-        return (key.hashCode() & 0x7FFFFFFF) % mapSize;
+        int h;
+        return (key == null) ? 0 : ((h = key.hashCode()) ^ (h >>> 16)) % mapSize;
     }
 
     private void reduce() {
