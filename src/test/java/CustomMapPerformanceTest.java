@@ -1,9 +1,8 @@
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Random;
 
-public class HashMapPerformanceTest {
+public class CustomMapPerformanceTest {
     public static void main(String[] args) {
         int[] sizes = {1, 10, 50, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000,
                 25000, 50000, 100000};
@@ -40,7 +39,7 @@ public class HashMapPerformanceTest {
             };
         }
 
-        try (FileWriter writer = new FileWriter("HashMap_performance.csv")) {
+        try (FileWriter writer = new FileWriter("CustomMap_performance.csv")) {
             writer.write("Size;put(K,V);get(K);getOrDefault(K,V);remove(K);remove(K,V);containsKey(K);containsValue(V);" +
                     "putIfAbsent(K,V);replace(K,V);replace(K,V,V);keySet();values();clear();equals(Object o);hashCode();toString()\n");
             for (long[] row : results) {
@@ -50,14 +49,14 @@ public class HashMapPerformanceTest {
                 }
                 writer.write("\n");
             }
-            System.out.println("Performance data written to HashMap_performance.csv");
+            System.out.println("Performance data written to CustomMap_performance.csv");
         } catch (IOException e) {
             System.err.println("Error writing CSV: " + e.getMessage());
         }
     }
 
     private static long benchmarkPut(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
             Integer key = random.nextInt(size * 2);
@@ -68,7 +67,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkGet(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
@@ -78,7 +77,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkGetOrDefault(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
@@ -88,7 +87,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkRemove(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
@@ -98,7 +97,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkRemoveWithValue(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
@@ -108,7 +107,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkContainsKey(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
@@ -118,7 +117,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkContainsValue(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
@@ -128,7 +127,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkPutIfAbsent(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
             map.putIfAbsent(random.nextInt(size * 2), "Value" + i);
@@ -137,7 +136,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkReplace(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
@@ -147,7 +146,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkReplaceWithOldNew(int size, Random random) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         for (int i = 0; i < size; i++) {
@@ -157,7 +156,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkKeySet(int size) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         map.keySet();
@@ -165,7 +164,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkValues(int size) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         map.values();
@@ -173,7 +172,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkClear(int size) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         map.clear();
@@ -181,8 +180,8 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkEquals(int size) {
-        HashMap<Integer, String> map1 = new HashMap<>();
-        HashMap<Integer, String> map2 = new HashMap<>();
+        CustomMap<Integer, String> map1 = new CustomMap(Integer.class, String.class);
+        CustomMap<Integer, String> map2 = new CustomMap(Integer.class, String.class);
         populateMap(map1, size);
         populateMap(map2, size);
         long start = System.nanoTime();
@@ -191,7 +190,7 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkHashCode(int size) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         map.hashCode();
@@ -199,14 +198,14 @@ public class HashMapPerformanceTest {
     }
 
     private static long benchmarkToString(int size) {
-        HashMap<Integer, String> map = new HashMap<>();
+        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
         populateMap(map, size);
         long start = System.nanoTime();
         map.toString();
         return System.nanoTime() - start;
     }
 
-    private static void populateMap(HashMap<Integer, String> map, int size) {
+    private static void populateMap(CustomMap<Integer, String> map, int size) {
         for (int i = 0; i < size; i++) {
             map.put(i, "Value" + i);
         }
