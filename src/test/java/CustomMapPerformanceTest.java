@@ -4,8 +4,7 @@ import java.util.Random;
 
 public class CustomMapPerformanceTest {
     public static void main(String[] args) {
-        int[] sizes = {1, 10, 50, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000,
-                25000, 50000, 100000};
+        int[] sizes = { 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000 };
 
         long[][] results = new long[sizes.length][];
         Random random = new Random();
