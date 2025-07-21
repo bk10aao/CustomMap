@@ -68,4 +68,6 @@ Implementation of a Map using an array
 - *n* = number of entries (key-value pairs)
 - *m* = number of buckets (size of internal array)
 
+# Performance vs Java HashMap
+
 ![Combined Performance Charts](PerformanceTesting//All_Map_Performance_Comparisons.png)
