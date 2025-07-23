@@ -310,7 +310,7 @@ class CustomMapTest {
     public void createTwoEqualMapTypes_onEquals_returns_true() {
         CustomMap map = new CustomMap(String.class, Integer.class);
         CustomMap mapTwo = new CustomMap(String.class, Integer.class);
-        assertTrue(map.equals(mapTwo));
+        assertEquals(map, mapTwo);
     }
 
     @Test
@@ -328,7 +328,7 @@ class CustomMapTest {
         for(int i = 0; i < 10; i++) map.put(String.valueOf(i), i * 10);
         CustomMap mapTwo = new CustomMap(String.class, Integer.class);
         for(int i = 0; i < 10; i++) mapTwo.put(String.valueOf(i), i * 10);
-        assertTrue(map.equals(mapTwo));
+        assertEquals(map, mapTwo);
     }
 
     @Test
