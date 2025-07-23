@@ -13,14 +13,13 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
     private final Class<K> key;
     private final Class<V> value;
 
-    private int mapSize;
+    private int mapSize = primes[0];
     private int size = 0;
     private static final double LOAD_FACTOR = 0.75f;
     private int primesIndex = 0;
 
     public CustomMap(final Class<K> key, final Class<V> value) {
         this.map = new LinkedList[primes[0]];
-        this.mapSize = primes[0];
         this.key = key;
         this.value = value;
     }
@@ -34,8 +33,8 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
 
     public void clear() {
         this.primesIndex = 0;
-        this.map = new LinkedList[primes[0]];
-        this.mapSize = primes[0];
+        this.map = new LinkedList[primes[primesIndex]];
+        this.mapSize = primes[primesIndex];
         this.size = 0;
     }
 
