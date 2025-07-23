@@ -45,10 +45,9 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
         LinkedList<MapEntry> indexedMapEntry = map[hash((K) key)]; // Cast key to K for hash
         if (indexedMapEntry == null)
             return false;
-        for (MapEntry entry : indexedMapEntry) {
+        for (MapEntry entry : indexedMapEntry)
             if (entry.key.equals(key))
                 return true;
-        }
         return false;
     }
 
@@ -154,15 +153,14 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
             throw new NullPointerException();
         if(containsKey(key)) {
             LinkedList<MapEntry> currentEntry = map[hash(key)];
-            for(MapEntry entry : currentEntry) {
-                if(entry.value.equals(value)) {
+            for(MapEntry entry : currentEntry)
+                if (entry.value.equals(value)) {
                     currentEntry.remove(entry);
                     size--;
                     if (mapSize > 17 && size <= mapSize / 4)
                         reduce();
                     return true;
                 }
-            }
         }
         return false;
     }
