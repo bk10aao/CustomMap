@@ -38,10 +38,10 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
         this.size = 0;
     }
 
-    public boolean containsKey(Object key) { // Change from K to Object
+    public boolean containsKey(Object key) {
         if (key == null)
             throw new NullPointerException();
-        LinkedList<MapEntry> indexedMapEntry = map[hash((K) key)]; // Cast key to K for hash
+        LinkedList<MapEntry> indexedMapEntry = map[hash((K) key)];
         if (indexedMapEntry == null)
             return false;
         for (MapEntry entry : indexedMapEntry)
@@ -82,10 +82,10 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
         return getOrDefault(key, null);
     }
 
-    public V getOrDefault(Object key, V defaultValue) { // Change key from K to Object
+    public V getOrDefault(Object key, V defaultValue) {
         if (key == null)
             throw new NullPointerException();
-        LinkedList<MapEntry> indexedMapEntry = map[hash((K) key)]; // Cast key to K for hash
+        LinkedList<MapEntry> indexedMapEntry = map[hash((K) key)];
         if (indexedMapEntry == null)
             return defaultValue;
         for (MapEntry entry : indexedMapEntry)
