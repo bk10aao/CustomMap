@@ -9,7 +9,7 @@ import java.util.Set;
 
 public class CustomMap<K, V> implements CustomMapInterface<K, V> {
 
-    private LinkedList<MapEntry>[] map;
+    private LinkedList<Node>[] map;
     private final Class<K> key;
     private final Class<V> value;
 
@@ -41,19 +41,19 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
     public boolean containsKey(Object key) {
         if (key == null)
             throw new NullPointerException();
-        LinkedList<MapEntry> indexedMapEntry = map[hash((K) key)];
+        LinkedList<Node> indexedMapEntry = map[hash((K) key)];
         if (indexedMapEntry == null)
             return false;
-        for (MapEntry entry : indexedMapEntry)
+        for (Node entry : indexedMapEntry)
             if (entry.key.equals(key))
                 return true;
         return false;
     }
 
     public boolean containsValue(final V value) {
-        for (LinkedList<MapEntry> mapEntries : map)
+        for (LinkedList<Node> mapEntries : map)
             if (mapEntries != null)
-                for (MapEntry entry : mapEntries)
+                for (Node entry : mapEntries)
                     if (Objects.equals(entry.value, value))
                         return true;
         return false;
@@ -85,10 +85,10 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
     public V getOrDefault(Object key, V defaultValue) {
         if (key == null)
             throw new NullPointerException();
-        LinkedList<MapEntry> indexedMapEntry = map[hash((K) key)];
+        LinkedList<Node> indexedMapEntry = map[hash((K) key)];
         if (indexedMapEntry == null)
             return defaultValue;
-        for (MapEntry entry : indexedMapEntry)
+        for (Node entry : indexedMapEntry)
             if (entry.key.equals(key))
                 return entry.value;
         return defaultValue;
@@ -97,18 +97,18 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
     @Override
     public int hashCode() {
         int result = Objects.hash(key, value, size);
-        for (LinkedList<MapEntry> entryLinkedList : map)
+        for (LinkedList<Node> entryLinkedList : map)
             if (entryLinkedList != null)
-                for (MapEntry entry : entryLinkedList)
+                for (Node entry : entryLinkedList)
                     result = 31 * result + Objects.hash(entry.key, entry.value);
         return result;
     }
 
     public Set<K> keySet() {
         Set<K> set = new HashSet<>();
-        for (LinkedList<MapEntry> mapEntries : map)
+        for (LinkedList<Node> mapEntries : map)
             if (mapEntries != null)
-                for (MapEntry entry : mapEntries)
+                for (Node entry : mapEntries)
                     set.add(entry.key);
         return set;
     }
@@ -119,7 +119,7 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
         if (value != null && !this.value.isInstance(value))
             throw new IllegalArgumentException();
         int index = hash(key);
-        LinkedList<MapEntry> indexedEntry = map[index];
+        LinkedList<Node> indexedEntry = map[index];
         V result = null;
         if (indexedEntry == null)
             addNewIndexEntry(key, value, index);
@@ -139,7 +139,7 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
     public V remove(final K key) {
         if(key == null)
             throw new NullPointerException();
-        LinkedList<MapEntry> entryLinkedList = map[hash(key)];
+        LinkedList<Node> entryLinkedList = map[hash(key)];
         if(entryLinkedList != null)
             for (int i = 0; i < entryLinkedList.size(); i++)
                 if(entryLinkedList.get(i).key.equals(key))
@@ -151,8 +151,8 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
         if(key == null || value == null)
             throw new NullPointerException();
         if(containsKey(key)) {
-            LinkedList<MapEntry> currentEntry = map[hash(key)];
-            for(MapEntry entry : currentEntry)
+            LinkedList<Node> currentEntry = map[hash(key)];
+            for(Node entry : currentEntry)
                 if (entry.value.equals(value)) {
                     currentEntry.remove(entry);
                     size--;
@@ -189,9 +189,9 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
             return "{}";
         StringBuilder stringBuilder = new StringBuilder("{");
         boolean first = true;
-        for(LinkedList<MapEntry> entryLinkedList : map)
+        for(LinkedList<Node> entryLinkedList : map)
             if(entryLinkedList != null)
-                for (MapEntry entry : entryLinkedList) {
+                for (Node entry : entryLinkedList) {
                     if (!first)
                         stringBuilder.append(", ");
                     stringBuilder.append("[").append(entry.key).append(", ").append(entry.value).append("]");
@@ -202,16 +202,16 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
 
     public Collection<V> values() {
         List<V> list = new ArrayList<>();
-        for (LinkedList<MapEntry> mapEntries : map)
+        for (LinkedList<Node> mapEntries : map)
             if (mapEntries != null)
-                for (MapEntry mapEntry : mapEntries)
+                for (Node mapEntry : mapEntries)
                     list.add(mapEntry.value);
         return list;
     }
 
     private void addNewIndexEntry(final K key, final V value, final int index) {
-        LinkedList<MapEntry> entryIndex = new LinkedList<>();
-        entryIndex.add(new MapEntry(key, value));
+        LinkedList<Node> entryIndex = new LinkedList<>();
+        entryIndex.add(new Node(key, value));
         map[index] = entryIndex;
         size++;
     }
@@ -249,8 +249,8 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
         map = newMap.map;
     }
 
-    private V removeItem(final LinkedList<MapEntry> entryLinkedList, final int index) {
-        MapEntry removed = entryLinkedList.remove(index);
+    private V removeItem(final LinkedList<Node> entryLinkedList, final int index) {
+        Node removed = entryLinkedList.remove(index);
         size--;
         if(mapSize > 17 && size <= mapSize / 4)
             reduce();
@@ -258,16 +258,16 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
     }
 
     private V updateExistingLinkedList(final int index, final K key, final V value) {
-        LinkedList<MapEntry> currentEntries = map[index];
+        LinkedList<Node> currentEntries = map[index];
         for (int i = 0; i <  currentEntries.size(); i++) {
-            MapEntry currentEntry = currentEntries.get(i);
+            Node currentEntry = currentEntries.get(i);
             if (currentEntry.key.equals(key)) {
                 V previousValue = currentEntry.value;
                 map[index].get(i).value = value;
                 return previousValue;
             }
         }
-        map[index].add(new MapEntry(key, value));
+        map[index].add(new Node(key, value));
         size++;
         return null;
     }
@@ -283,11 +283,11 @@ public class CustomMap<K, V> implements CustomMapInterface<K, V> {
                                             187751, 225307, 270371, 324449, 389357, 467237, 560689, 672827, 807403, 968897, 1162687, 1395263,
                                             1674319, 2009191, 2411033, 2893249, 3471899, 4166287, 4999559, 5999471, 7199369 };
 
-    public class MapEntry {
+    public class Node {
         final K key;
         V value;
 
-        MapEntry(final K key, V value) {
+        Node(final K key, V value) {
             this.key = key;
             this.value = value;
         }
