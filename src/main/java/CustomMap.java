@@ -47,7 +47,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         this.size = 0;
     }
 
-    public boolean containsKey(Object key) {
+    public boolean containsKey(final Object key) {
         if (key == null)
             throw new NullPointerException();
         ArrayList<Node> bucket = map[hash(key)];
@@ -69,7 +69,7 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o)
             return true;
         if (!(o instanceof CustomMap<?, ?> other))
@@ -104,7 +104,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         return set;
     }
 
-    public void putAll(Map<? extends K, ? extends V> m) {
+    public void putAll(final Map<? extends K, ? extends V> m) {
         if(m == null)
             throw new NullPointerException();
         int newSize = size + m.size();
@@ -116,7 +116,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             put(node.getKey(), node.getValue());
     }
 
-    public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public V compute(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         if (key == null || remappingFunction == null)
             throw new NullPointerException();
         if (!this.key.isInstance(key))
@@ -134,7 +134,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         return newValue;
     }
 
-    public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+    public V computeIfAbsent(final K key, final Function<? super K, ? extends V> mappingFunction) {
         if (key == null || mappingFunction == null)
             throw new NullPointerException();
         if (!this.key.isInstance(key))
@@ -151,7 +151,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         return get(key);
     }
 
-    public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public V computeIfPresent(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         if (key == null || remappingFunction == null)
             throw new NullPointerException();
         if (!this.key.isInstance(key))
@@ -171,7 +171,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         return null;
     }
 
-    public void forEach(BiConsumer<? super K, ? super V> action) {
+    public void forEach(final BiConsumer<? super K, ? super V> action) {
         if (action == null)
             throw new NullPointerException();
         for (ArrayList<Node> mapEntries : map)
@@ -180,7 +180,7 @@ public class CustomMap<K, V> implements Map<K, V> {
                     action.accept(node.key, node.value);
     }
 
-    public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+    public V merge(final K key, final V value, final BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         if (key == null || value == null || remappingFunction == null)
             throw new NullPointerException();
         if (!this.key.isInstance(key) || !this.value.isInstance(value))
@@ -198,7 +198,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         return put(key, newValue);
     }
 
-    public V replace(K key, V value) {
+    public V replace(final K key, final V value) {
         if (key == null || value == null)
             throw new NullPointerException();
         if (!this.key.isInstance(key) || !this.value.isInstance(value))
@@ -206,7 +206,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         return containsKey(key) ? put(key, value) : null;
     }
 
-    public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+    public void replaceAll(final BiFunction<? super K, ? super V, ? extends V> function) {
         if (function == null)
             throw new IllegalArgumentException();
         for (ArrayList<Node> mapEntries : map) {
@@ -221,7 +221,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
     }
 
-    public V getOrDefault(Object key, V defaultValue) {
+    public V getOrDefault(final Object key, final V defaultValue) {
         if (key == null)
             throw new NullPointerException();
         ArrayList<Node> bucket = map[hash(key)];
@@ -366,14 +366,14 @@ public class CustomMap<K, V> implements Map<K, V> {
         map = newMap.map;
     }
 
-    private int getClosestPrime(int mapSize) {
+    private int getClosestPrime(final int mapSize) {
         for(int i = 0; i < primes.length; i++)
             if(primes[i] >= mapSize)
                 return primes[primesIndex = i];
         return primes[0];
     }
 
-    private int hash(Object key) {
+    private int hash(final Object key) {
         if(key == null)
             throw new NullPointerException();
         int h = key.hashCode();
@@ -417,7 +417,7 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     //this method is really just for testing LOAD_FACTOR
-    public int getMapSize() {
+    public final int getMapSize() {
         return this.mapSize;
     }
 
