@@ -50,10 +50,10 @@ public class CustomMap<K, V> implements Map<K, V> {
     public boolean containsKey(Object key) {
         if (key == null)
             throw new NullPointerException();
-        ArrayList<Node> indexedMapEntry = map[hash(key)];
-        if (indexedMapEntry == null)
+        ArrayList<Node> bucket = map[hash(key)];
+        if (bucket == null)
             return false;
-        for (Node entry : indexedMapEntry)
+        for (Node entry : bucket)
             if (entry.key.equals(key))
                 return true;
         return false;
@@ -78,7 +78,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             return false;
         if (!key.equals(other.key) || !value.equals(other.value))
             return false;
-        for (Map.Entry<K, V> entry : entrySet()) {
+        for (CustomMap.Entry<K, V> entry : entrySet()) {
             if (!other.containsKey(entry.getKey()))
                 return false;
             if (!Objects.equals(entry.getValue(), other.get(entry.getKey())))
@@ -95,7 +95,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         return size == 0;
     }
 
-    public Set<Map.Entry<K, V>> entrySet() {
+    public Set<CustomMap.Entry<K, V>> entrySet() {
         Set<Map.Entry<K, V>> set = new HashSet<>();
         for(ArrayList<Node> mapEntries : map)
             if (mapEntries != null)
@@ -112,7 +112,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             mapSize = getClosestPrime((int) (newSize / LOAD_FACTOR));
             expand();
         }
-        for(Map.Entry<? extends K, ? extends V> node : m.entrySet())
+        for(CustomMap.Entry<? extends K, ? extends V> node : m.entrySet())
             put(node.getKey(), node.getValue());
     }
 
@@ -224,10 +224,10 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V getOrDefault(Object key, V defaultValue) {
         if (key == null)
             throw new NullPointerException();
-        ArrayList<Node> indexedMapEntry = map[hash(key)];
-        if (indexedMapEntry == null)
+        ArrayList<Node> bucket = map[hash(key)];
+        if (bucket == null)
             return defaultValue;
-        for (Node entry : indexedMapEntry)
+        for (Node entry : bucket)
             if (entry.key.equals(key))
                 return entry.value;
         return defaultValue;
@@ -236,7 +236,7 @@ public class CustomMap<K, V> implements Map<K, V> {
     @Override
     public int hashCode() {
         int result = 0;
-        for (Map.Entry<K, V> entry : entrySet()) {
+        for (CustomMap.Entry<K, V> entry : entrySet()) {
             result += Objects.hashCode(entry.getKey()) ^ Objects.hashCode(entry.getValue());
         }
         return result;
@@ -255,9 +255,9 @@ public class CustomMap<K, V> implements Map<K, V> {
         if (!this.key.isInstance(key) || value != null && !this.value.isInstance(value))
             throw new IllegalArgumentException();
         int index = hash(key);
-        ArrayList<Node> indexedEntry = map[index];
+        ArrayList<Node> bucket = map[index];
         V result = null;
-        if (indexedEntry == null)
+        if (bucket == null)
             addNewIndexEntry(key, value, index);
         else
             result = updateExistingArrayList(index, key, value);
@@ -287,8 +287,8 @@ public class CustomMap<K, V> implements Map<K, V> {
         if (key == null || value == null)
             throw new NullPointerException();
         if (containsKey(key)) {
-            ArrayList<Node> currentEntry = map[hash(key)];
-            Iterator<Node> iterator = currentEntry.iterator();
+            ArrayList<Node> bucket = map[hash(key)];
+            Iterator<Node> iterator = bucket.iterator();
             while (iterator.hasNext()) {
                 if (iterator.next().value.equals(value)) {
                     iterator.remove();
