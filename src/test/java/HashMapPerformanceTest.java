@@ -1,12 +1,12 @@
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 public class HashMapPerformanceTest {
     public static void main(String[] args) {
         int[] sizes = { 10000, 20000, 30000, 40000, 50000, 60000, 70000, 80000, 90000, 100000 };
-
 
         long[][] results = new long[sizes.length][];
         Random random = new Random();
@@ -31,18 +31,30 @@ public class HashMapPerformanceTest {
             long equalsTime = benchmarkEquals(size);
             long hashCodeTime = benchmarkHashCode(size);
             long toStringTime = benchmarkToString(size);
+            long entrySetTime = benchmarkEntrySet(size);
+            long putAllTime = benchmarkPutAll(size, random);
+            long computeTime = benchmarkCompute(size, random);
+            long computeIfAbsentTime = benchmarkComputeIfAbsent(size, random);
+            long computeIfPresentTime = benchmarkComputeIfPresent(size, random);
+            long forEachTime = benchmarkForEach(size);
+            long mergeTime = benchmarkMerge(size, random);
+            long replaceAllTime = benchmarkReplaceAll(size);
 
             results[i] = new long[]{
                     size, putTime, getTime, getOrDefaultTime, removeTime, removeWithValueTime,
                     containsKeyTime, containsValueTime, putIfAbsentTime, replaceTime,
                     replaceWithOldNewTime, keySetTime, valuesTime, clearTime,
-                    equalsTime, hashCodeTime, toStringTime
+                    equalsTime, hashCodeTime, toStringTime, entrySetTime, putAllTime,
+                    computeTime, computeIfAbsentTime, computeIfPresentTime, forEachTime,
+                    mergeTime, replaceAllTime
             };
         }
 
         try (FileWriter writer = new FileWriter("HashMap_performance.csv")) {
             writer.write("Size;put(K,V);get(K);getOrDefault(K,V);remove(K);remove(K,V);containsKey(K);containsValue(V);" +
-                    "putIfAbsent(K,V);replace(K,V);replace(K,V,V);keySet();values();clear();equals(Object o);hashCode();toString()\n");
+                    "putIfAbsent(K,V);replace(K,V);replace(K,V,V);keySet();values();clear();equals(Object o);hashCode();" +
+                    "toString();entrySet();putAll(Map);compute(K,BiFunction);computeIfAbsent(K,Function);" +
+                    "computeIfPresent(K,BiFunction);forEach(BiConsumer);merge(K,V,BiFunction);replaceAll(BiFunction)\n");
             for (long[] row : results) {
                 for (int j = 0; j < row.length; j++) {
                     writer.write(String.valueOf(row[j]));
@@ -203,6 +215,83 @@ public class HashMapPerformanceTest {
         populateMap(map, size);
         long start = System.nanoTime();
         map.toString();
+        return System.nanoTime() - start;
+    }
+
+    private static long benchmarkEntrySet(int size) {
+        HashMap<Integer, String> map = new HashMap<>();
+        populateMap(map, size);
+        long start = System.nanoTime();
+        map.entrySet();
+        return System.nanoTime() - start;
+    }
+
+    private static long benchmarkPutAll(int size, Random random) {
+        HashMap<Integer, String> map = new HashMap<>();
+        Map<Integer, String> source = new HashMap<>();
+        for (int i = 0; i < size; i++) {
+            source.put(random.nextInt(size * 2), "Value" + i);
+        }
+        long start = System.nanoTime();
+        map.putAll(source);
+        return System.nanoTime() - start;
+    }
+
+    private static long benchmarkCompute(int size, Random random) {
+        HashMap<Integer, String> map = new HashMap<>();
+        populateMap(map, size);
+        long start = System.nanoTime();
+        for (int i = 0; i < size; i++) {
+            final int x = i;
+            map.compute(random.nextInt(size * 2), (k, v) -> v == null ? "Value" + x : "Updated" + v);
+        }
+        return System.nanoTime() - start;
+    }
+
+    private static long benchmarkComputeIfAbsent(int size, Random random) {
+        HashMap<Integer, String> map = new HashMap<>();
+        populateMap(map, size);
+        long start = System.nanoTime();
+        for (int i = 0; i < size; i++) {
+            final int x = i;
+            map.computeIfAbsent(random.nextInt(size * 2), k -> "Value" + x);
+        }
+        return System.nanoTime() - start;
+    }
+
+    private static long benchmarkComputeIfPresent(int size, Random random) {
+        HashMap<Integer, String> map = new HashMap<>();
+        populateMap(map, size);
+        long start = System.nanoTime();
+        for (int i = 0; i < size; i++) {
+            map.computeIfPresent(random.nextInt(size * 2), (k, v) -> "Updated" + v);
+        }
+        return System.nanoTime() - start;
+    }
+
+    private static long benchmarkForEach(int size) {
+        HashMap<Integer, String> map = new HashMap<>();
+        populateMap(map, size);
+        long start = System.nanoTime();
+        map.forEach((k, v) -> {});
+        return System.nanoTime() - start;
+    }
+
+    private static long benchmarkMerge(int size, Random random) {
+        HashMap<Integer, String> map = new HashMap<>();
+        populateMap(map, size);
+        long start = System.nanoTime();
+        for (int i = 0; i < size; i++) {
+            map.merge(random.nextInt(size * 2), "Value" + i, (oldVal, newVal) -> oldVal == null ? newVal : oldVal + newVal);
+        }
+        return System.nanoTime() - start;
+    }
+
+    private static long benchmarkReplaceAll(int size) {
+        HashMap<Integer, String> map = new HashMap<>();
+        populateMap(map, size);
+        long start = System.nanoTime();
+        map.replaceAll((k, v) -> "Updated" + v);
         return System.nanoTime() - start;
     }
 

@@ -1,8 +1,11 @@
 import org.junit.jupiter.api.Test;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -472,6 +475,322 @@ class CustomMapTest {
     public void givenMapOf_5_values_on_intKey_intValue_on_toString_returns_correctString() {
         CustomMap map = new CustomMap(Integer.class, Integer.class);
         for(int i = 0; i < 5; i++) map.put(i, i * 10);
-        assertEquals("{[0, 0], [1, 10], [2, 20], [3, 30], [4, 40]}", map.toString());
+        assertEquals("{0=0, 1=10, 2=20, 3=30, 4=40}", map.toString());
+    }
+
+    @Test
+    public void givenEmptyMap_onIsEmpty_returnsTrue() {
+        assertTrue(new CustomMap<>(Integer.class, Integer.class).isEmpty());
+    }
+
+    @Test
+    public void givenMapWithOneEntry_onIsEmpty_returnsFalse() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        map.put(1, 10);
+        assertFalse(map.isEmpty());
+    }
+
+    @Test
+    public void givenMapWithEntries_onClear_thenIsEmpty_returnsTrue() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        map.put(1, 100);
+        map.put(2, 200);
+        map.clear();
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    public void givenEmptyMap_onEntrySet_returnsEmptySet() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        Set<CustomMap.Entry<Integer, Integer>> entries = map.entrySet();
+        assertEquals(0, entries.size());
+    }
+
+    @Test
+    public void givenMapWithEntries_onEntrySet_returnsCorrectEntries() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        map.put(1, 100);
+        map.put(2, 200);
+        Set<Map.Entry<Integer, Integer>> entries = map.entrySet();
+        assertEquals(2, entries.size());
+        Set<Map.Entry<Integer, Integer>> expected = new HashSet<>();
+        expected.add(new AbstractMap.SimpleEntry<>(1, 100));
+        expected.add(new AbstractMap.SimpleEntry<>(2, 200));
+        assertEquals(expected, entries);
+    }
+
+    @Test
+    public void givenMapWithCollisions_onEntrySet_returnsAllEntries() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        map.put(1, 100);
+        map.put(2, 200);
+        map.put(3, 300);
+        Set<Map.Entry<Integer, Integer>> entries = map.entrySet();
+        assertEquals(3, entries.size());
+        Set<Map.Entry<Integer, Integer>> expected = new HashSet<>();
+        expected.add(new AbstractMap.SimpleEntry<>(1, 100));
+        expected.add(new AbstractMap.SimpleEntry<>(2, 200));
+        expected.add(new AbstractMap.SimpleEntry<>(3, 300));
+        assertEquals(expected, entries);
+    }
+
+    @Test
+    public void givenEmptyMap_onPutAllNullMap_throwsNullPointerException() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.putAll(null));
+    }
+
+    @Test
+    public void givenEmptyMap_onPutAllEmptyMap_doesNotChangeMap() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        CustomMap<Integer, Integer> source = new CustomMap<>(Integer.class, Integer.class);
+        map.putAll(source);
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void givenEmptyMap_onPutAllWithEntries_addsAllEntries() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        CustomMap<Integer, Integer> source = new CustomMap<>(Integer.class, Integer.class);
+        source.put(1, 100);
+        source.put(2, 200);
+        map.putAll(source);
+        assertEquals(2, map.size());
+        assertEquals(100, map.get(1));
+        assertEquals(200, map.get(2));
+    }
+
+    @Test
+    public void givenMapWithEntries_onPutAll_addsNewEntriesAndUpdatesExisting() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        map.put(1, 100);
+        CustomMap<Integer, Integer> source = new CustomMap<>(Integer.class, Integer.class);
+        source.put(1, 150);
+        source.put(2, 200);
+        map.putAll(source);
+        assertEquals(2, map.size());
+        assertEquals(150, map.get(1));
+        assertEquals(200, map.get(2));
+    }
+
+    @Test
+    public void givenMap_onComputeWithNullKey_throwsNullPointerException() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.compute(null, (k, v) -> v));
+    }
+
+    @Test
+    public void givenMap_onComputeWithNullFunction_throwsNullPointerException() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.compute(1, null));
+    }
+
+    @Test
+    public void givenMap_onComputeIfAbsentWithNullKey_throwsNullPointerException() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.computeIfAbsent(null, k -> 100));
+    }
+
+    @Test
+    public void givenMap_onComputeIfAbsentWithNullFunction_throwsNullPointerException() {
+        CustomMap<Integer, Integer> map = new CustomMap<>(Integer.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.computeIfAbsent(1, null));
+    }
+
+    @Test
+    public void givenMap_onComputeIfAbsentWithPresentKey_returnsExistingValue() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("key", 100);
+        Integer result = map.computeIfAbsent("key", k -> 200);
+        assertEquals(100, result);
+        assertEquals(100, map.get("key"));
+        assertEquals(1, map.size());
+    }
+
+    @Test
+    public void givenMap_onComputeIfAbsentReturningNull_doesNotAddEntry() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        Integer result = map.computeIfAbsent("key", k -> null);
+        assertNull(result);
+        assertNull(map.get("key"));
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void givenMap_onComputeIfPresentWithNullKey_throwsNullPointerException() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.computeIfPresent(null, (k, v) -> v));
+    }
+
+    @Test
+    public void givenMap_onComputeIfPresentWithNullFunction_throwsNullPointerException() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.computeIfPresent("key", null));
+    }
+
+    @Test
+    public void givenMap_onComputeIfPresentWithAbsentKey_returnsNull() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        Integer result = map.computeIfPresent("key", (k, v) -> v + 100);
+        assertNull(result);
+        assertNull(map.get("key"));
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void givenMap_onComputeIfPresentReturningNull_removesEntry() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("key", 100);
+        Integer result = map.computeIfPresent("key", (k, v) -> null);
+        assertNull(result);
+        assertNull(map.get("key"));
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void givenMap_onForEachWithNullAction_throwsNullPointerException() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.forEach(null));
+    }
+
+    @Test
+    public void givenEmptyMap_onForEach_doesNotInvokeAction() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        List<String> keys = new ArrayList<>();
+        map.forEach((k, v) -> keys.add(k));
+        assertEquals(0, keys.size());
+    }
+
+    @Test
+    public void givenMapWithEntries_onForEach_invokesActionForAllEntries() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("key1", 100);
+        map.put("key2", 200);
+        List<String> keys = new ArrayList<>();
+        List<Integer> values = new ArrayList<>();
+        map.forEach((k, v) -> {
+            keys.add(k);
+            values.add(v);
+        });
+        assertEquals(2, keys.size());
+        assertTrue(keys.contains("key1"));
+        assertTrue(keys.contains("key2"));
+        assertEquals(2, values.size());
+        assertTrue(values.contains(100));
+        assertTrue(values.contains(200));
+    }
+
+    @Test
+    public void givenMap_onReplaceAllWithNullFunction_throwsIllegalArgumentException() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        assertThrows(IllegalArgumentException.class, () -> map.replaceAll(null));
+    }
+
+    @Test
+    public void givenEmptyMap_onReplaceAll_doesNotChangeMap() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.replaceAll((k, v) -> v + 100);
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void givenMapWithEntries_onReplaceAll_updatesAllValues() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("key1", 100);
+        map.put("key2", 200);
+        map.replaceAll((k, v) -> v + 50);
+        assertEquals(2, map.size());
+        assertEquals(150, map.get("key1"));
+        assertEquals(250, map.get("key2"));
+    }
+
+    @Test
+    public void givenMap_onReplaceAllReturningNull_setsValuesToNull() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("key1", 100);
+        map.put("key2", 200);
+        map.replaceAll((k, v) -> null);
+        assertEquals(2, map.size());
+        assertNull(map.get("key1"));
+        assertNull(map.get("key2"));
+    }
+
+    @Test
+    public void givenMap_onReplaceWithNullKey_throwsNullPointerException() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.replace(null, 100));
+    }
+
+    @Test
+    public void givenMap_onReplaceWithNullValue_throwsNullPointerException() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        assertThrows(NullPointerException.class, () -> map.replace("key", null));
+    }
+
+    @Test
+    public void givenMap_onReplaceWithAbsentKey_returnsNull() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        Integer result = map.replace("key", 100);
+        assertNull(result);
+        assertNull(map.get("key"));
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void givenMap_onReplaceWithPresentKey_updatesValueAndReturnsOldValue() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("key", 100);
+        Integer result = map.replace("key", 200);
+        assertEquals(100, result);
+        assertEquals(200, map.get("key"));
+        assertEquals(1, map.size());
+    }
+
+    @Test
+    public void givenMap_onComputeWithAbsentKey_addsNewEntry() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        Integer result = map.compute("key", (k, v) -> 100);
+        assertEquals(100, result);
+        assertEquals(100, map.get("key"));
+        assertEquals(1, map.size());
+    }
+
+    @Test
+    public void givenMap_onComputeWithPresentKey_updatesValue() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("key", 100);
+        Integer result = map.compute("key", (k, v) -> v + 50);
+        assertEquals(150, result);
+        assertEquals(150, map.get("key"));
+        assertEquals(1, map.size());
+    }
+
+    @Test
+    public void givenMap_onComputeReturningNull_removesEntry() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("key", 100);
+        Integer result = map.compute("key", (k, v) -> null);
+        assertNull(result);
+        assertNull(map.get("key"));
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void givenMap_onComputeIfAbsentWithAbsentKey_addsNewEntry() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        Integer result = map.computeIfAbsent("key", k -> 100);
+        assertEquals(100, result);
+        assertEquals(100, map.get("key"));
+        assertEquals(1, map.size());
+    }
+
+    @Test
+    public void givenMap_onComputeIfPresentWithPresentKey_updatesValue() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("key", 100);
+        Integer result = map.computeIfPresent("key", (k, v) -> v + 50);
+        assertEquals(150, result);
+        assertEquals(150, map.get("key"));
+        assertEquals(1, map.size());
     }
 }

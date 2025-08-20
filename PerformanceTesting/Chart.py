@@ -7,7 +7,10 @@ expected_methods = [
     'put(K,V)', 'get(K)', 'getOrDefault(K,V)', 'remove(K)', 'remove(K,V)',
     'containsKey(K)', 'containsValue(V)', 'putIfAbsent(K,V)', 'replace(K,V)',
     'replace(K,V,V)', 'keySet()', 'values()', 'clear()', 'equals(Object o)',
-    'hashCode()', 'toString()'
+    'hashCode()', 'toString()', 'entrySet()', 'putAll(Map)',
+    'compute(K,BiFunction)', 'computeIfAbsent(K,Function)',
+    'computeIfPresent(K,BiFunction)', 'forEach(BiConsumer)',
+    'merge(K,V,BiFunction)', 'replaceAll(BiFunction)'
 ]
 
 EXPECTED_SIZE_COUNT = 10
