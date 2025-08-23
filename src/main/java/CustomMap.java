@@ -377,6 +377,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         if(key == null)
             throw new NullPointerException();
         int h = key.hashCode();
+        //map size added after modulus to prevent negative indexing
         return ((h ^ (h >>> 16)) % mapSize + mapSize) % mapSize;
     }
 
@@ -403,11 +404,11 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     private V updateExistingArrayList(final int index, final K key, final V value) {
         ArrayList<Node> currentEntries = map[index];
-        for (int i = 0; i <  currentEntries.size(); i++) {
+        for (int i = 0, currentEntriesSize = currentEntries.size(); i < currentEntriesSize; i++) {
             Node currentEntry = currentEntries.get(i);
             if (currentEntry.key.equals(key)) {
                 V previousValue = currentEntry.value;
-                currentEntries.get(i).value = value;
+                currentEntry.value = value;
                 return previousValue;
             }
         }
