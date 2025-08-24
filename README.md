@@ -27,47 +27,80 @@ Implementation of a Map using an array
 1. To build and test the project run command `./gradlew clean build`
 2. To test the project run command `gradle test --tests CustomMapTest`
 
+## Time Complexity
+
+| Method                              | CustomMap                         | HashMap                           | Winner |
+|-------------------------------------|-----------------------------------|-----------------------------------|--------|
+| **clear()**                         | O(m)                              | O(m)                              | Tie    |
+| **compute(K, BiFunction)**          | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **computeIfAbsent(K, Function)**    | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **computeIfPresent(K, BiFunction)** | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **containsKey(Object)**             | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **containsValue(Object)**           | O(n)                              | O(n)                              | Tie    |
+| **entrySet()**                      | O(n)                              | O(n)                              | Tie    |
+| **equals(Object)**                  | O(n)                              | O(n)                              | Tie    |
+| **expand()**                        | O(m + n)                          | O(m + n)                          | Tie    |
+| **forEach(BiConsumer)**             | O(n)                              | O(n)                              | Tie    |
+| **get(Object)**                     | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **getOrDefault(Object, V)**         | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **hash(Object)**                    | O(1)                              | O(1)                              | Tie    |
+| **hashCode()**                      | O(n)                              | O(n)                              | Tie    |
+| **isEmpty()**                       | O(1)                              | O(1)                              | Tie    |
+| **keySet()**                        | O(n)                              | O(n)                              | Tie    |
+| **merge(K, V, BiFunction)**         | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **put(K, V)**                       | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **putAll(Map)**                     | O(m' + n') avg, O(m' + n'n) worst | O(m' + n') avg, O(m' + n'n) worst | Tie    |
+| **putIfAbsent(K, V)**               | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **reduce()**                        | O(m + n)                          | O(m + n)                          | Tie    |
+| **remove(Object)**                  | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **remove(Object, Object)**          | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **replace(K, V)**                   | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **replace(K, V, V)**                | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
+| **replaceAll(BiFunction)**          | O(n)                              | O(n)                              | Tie    |
+| **size()**                          | O(1)                              | O(1)                              | Tie    |
+| **toString()**                      | O(n)                              | O(n)                              | Tie    |
+| **values()**                        | O(n)                              | O(n)                              | Tie    |
+- 
 ## Time Complexity Comparison
 
-| Method           | CustomMap Time Complexity           | HashMap Time Complexity              | Winner          |
-|------------------|-----------------------------------|------------------------------------|-----------------|
-| **clear()**      | O(m)                              | O(m)                               | Tie             |
-| **containsKey()** | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
-| **containsValue()** | O(n)                            | O(n)                              | Tie             |
-| **expand()**     | O(m + n)                         | O(m + n)                          | Tie             |
-| **get()**        | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
-| **keySet()**     | O(n)                             | O(n)                              | Tie             |
-| **put()**        | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
-| **putIfAbsent()** | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
-| **remove()**     | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
-| **replace(K, V)** | O(1) avg, O(n) worst              | O(1) avg, O(n) worst               | Tie             |
-| **values()**     | O(n)                             | O(n)                              | Tie             |
+| Method                              | CustomMap | HashMap  | Winner |
+|-------------------------------------|-----------|----------|--------|
+| **clear()**                         | O(m)      | O(m)     | Tie    |
+| **compute(K, BiFunction)**          | O(1)      | O(1)     | Tie    |
+| **computeIfAbsent(K, Function)**    | O(1)      | O(1)     | Tie    |
+| **computeIfPresent(K, BiFunction)** | O(1)      | O(1)     | Tie    |
+| **containsKey(Object)**             | O(1)      | O(1)     | Tie    |
+| **containsValue(Object)**           | O(1)      | O(1)     | Tie    |
+| **entrySet()**                      | O(n)      | O(n)     | Tie    |
+| **equals(Object)**                  | O(n)      | O(n)     | Tie    |
+| **expand()**                        | O(m + n)  | O(m + n) | Tie    |
+| **forEach(BiConsumer)**             | O(1)      | O(1)     | Tie    |
+| **get(Object)**                     | O(1)      | O(1)     | Tie    |
+| **getOrDefault(Object, V)**         | O(1)      | O(1)     | Tie    |
+| **hash(Object)**                    | O(1)      | O(1)     | Tie    |
+| **hashCode()**                      | O(n)      | O(n)     | Tie    |
+| **isEmpty()**                       | O(1)      | O(1)     | Tie    |
+| **keySet()**                        | O(n)      | O(n)     | Tie    |
+| **merge(K, V, BiFunction)**         | O(1)      | O(1)     | Tie    |
+| **put(K, V)**                       | O(1)      | O(1)     | Tie    |
+| **putAll(Map)**                     | O(m + n)  | O(m + n) | Tie    |
+| **putIfAbsent(K, V)**               | O(1)      | O(1)     | Tie    |
+| **reduce()**                        | O(m + n)  | O(m + n) | Tie    |
+| **remove(Object)**                  | O(1)      | O(1)     | Tie    |
+| **remove(Object, Object)**          | O(1)      | O(1)     | Tie    |
+| **replace(K, V)**                   | O(1)      | O(1)     | Tie    |
+| **replace(K, V, V)**                | O(1)      | O(1)     | Tie    |
+| **replaceAll(BiFunction)**          | O(1)      | O(1)     | Tie    |
+| **size()**                          | O(1)      | O(1)     | Tie    |
+| **toString()**                      | O(n)      | O(n)     | Tie    |
+| **values()**                        | O(n)      | O(n)     | Tie    |
 
----
-
-## Space Complexity Comparison
-
-| Method           | CustomMap Space Complexity        | HashMap Space Complexity           | Winner          |
-|------------------|---------------------------------|----------------------------------|-----------------|
-| **clear()**      | O(m)                            | O(m)                             | Tie             |
-| **containsKey()** | O(1)                           | O(1)                            | Tie             |
-| **containsValue()** | O(1)                         | O(1)                            | Tie             |
-| **expand()**     | O(n + m)                       | O(n + m)                        | Tie             |
-| **get()**        | O(1)                           | O(1)                            | Tie             |
-| **keySet()**     | O(n)                           | O(n)                            | Tie             |
-| **put()**        | O(1) amortized                 | O(1) amortized                  | Tie             |
-| **putIfAbsent()** | O(1) amortized                 | O(1) amortized                  | Tie             |
-| **remove()**     | O(1)                           | O(1)                            | Tie             |
-| **replace(K, V)** | O(1)                           | O(1)                            | Tie             |
-| **values()**     | O(n)                           | O(n)                            | Tie             |
-
----
-
-## Notes:
-
-- *n* = number of entries (key-value pairs)
-- *m* = number of buckets (size of internal array)
+**Notes**:
+- **m**: Number of buckets in the map.
+- **n**: Number of key-value mappings.
+- **m'**: Number of buckets after resizing.
+- **n'**: Number of entries in the input map.
 
 # Performance vs Java HashMap
 
-![Combined Performance Charts](PerformanceTesting//All_Map_Performance_Comparisons.png)
+![Combined Performance Charts](PerformanceTesting/All_Map_Performance_Comparisons.png)
