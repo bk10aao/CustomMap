@@ -59,27 +59,6 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     /**
-     * Constructs an empty {@code CustomMap} with the specified key and value types and an initial
-     * capacity set to the smallest prime number greater than or equal to the given {@code mapSize}.
-     * This constructor is used internally for resizing operations (e.g., during {@code expand} or
-     * {@code reduce}). The map uses a hash table with chaining (via {@link ArrayList}) to handle
-     * collisions and resizes when the load factor (0.75) is exceeded.
-     *
-     * @param key the {@code Class} object representing the type of keys in this map
-     * @param value the {@code Class} object representing the type of values in this map
-     * @param mapSize the desired initial capacity (adjusted to the nearest prime number)
-     * @throws IllegalArgumentException if the key or value class is null
-     */
-    private CustomMap(final Class<K> key, final Class<V> value, final int mapSize) {
-        if(key == null || value == null)
-            throw new IllegalArgumentException();
-        this.mapSize = getClosestPrime(mapSize);
-        this.map = new ArrayList[mapSize];
-        this.key = key;
-        this.value = value;
-    }
-
-    /**
      * Removes all mappings from this map (optional operation). The map will be empty after this call,
      * with its internal array reset to the initial capacity (17 buckets).
      *
@@ -130,11 +109,11 @@ public class CustomMap<K, V> implements Map<K, V> {
             throw new NullPointerException();
         if (!this.key.isInstance(key))
             throw new IllegalArgumentException();
-        V previous = get(key);
-        V newValue = remappingFunction.apply(key, previous);
+        V OldValue = get(key);
+        V newValue = remappingFunction.apply(key, OldValue);
         if (newValue != null && !this.value.isInstance(newValue))
             throw new IllegalArgumentException();
-        if (newValue == null && previous != null) {
+        if (newValue == null && OldValue != null) {
             remove(key);
             return null;
         }
@@ -236,10 +215,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         ArrayList<Node> bucket = map[hash(key)];
         if (bucket == null)
             return false;
-        for (Node entry : bucket)
-            if (entry.key.equals(key))
-                return true;
-        return false;
+        return bucket.stream().anyMatch(entry -> entry.key.equals(key));
     }
 
     /**
@@ -302,12 +278,9 @@ public class CustomMap<K, V> implements Map<K, V> {
             return false;
         if (!key.equals(other.key) || !value.equals(other.value))
             return false;
-        for (CustomMap.Entry<K, V> entry : entrySet()) {
-            if (!other.containsKey(entry.getKey()))
+        for (CustomMap.Entry<K, V> entry : entrySet())
+            if (!other.containsKey(entry.getKey()) || !Objects.equals(entry.getValue(), other.get(entry.getKey())))
                 return false;
-            if (!Objects.equals(entry.getValue(), other.get(entry.getKey())))
-                return false;
-        }
         return true;
     }
 
@@ -324,8 +297,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             throw new NullPointerException();
         for (ArrayList<Node> mapEntries : map)
             if (mapEntries != null)
-                for (Node node : mapEntries)
-                    action.accept(node.key, node.value);
+                mapEntries.forEach(node -> action.accept(node.key, node.value));
     }
 
     /**
@@ -386,9 +358,8 @@ public class CustomMap<K, V> implements Map<K, V> {
     @Override
     public int hashCode() {
         int result = 0;
-        for (CustomMap.Entry<K, V> entry : entrySet()) {
+        for (CustomMap.Entry<K, V> entry : entrySet())
             result += Objects.hashCode(entry.getKey()) ^ Objects.hashCode(entry.getValue());
-        }
         return result;
     }
 
@@ -634,13 +605,12 @@ public class CustomMap<K, V> implements Map<K, V> {
         if (!this.key.isInstance(key) || !this.value.isInstance(newValue))
             throw new IllegalArgumentException();
         ArrayList<Node> bucket = map[hash(key)];
-        if (bucket != null) {
+        if (bucket != null)
             for (Node node : bucket) {
                 if (node.key.equals(key) && Objects.equals(node.value, oldValue)) {
                     node.value = newValue;
                     return true;
                 }
-            }
         }
         return false;
     }
@@ -660,16 +630,14 @@ public class CustomMap<K, V> implements Map<K, V> {
     public void replaceAll(final BiFunction<? super K, ? super V, ? extends V> function) {
         if (function == null)
             throw new IllegalArgumentException();
-        for (ArrayList<Node> mapEntries : map) {
-            if (mapEntries != null) {
+        for (ArrayList<Node> mapEntries : map)
+            if (mapEntries != null)
                 for (Node node : mapEntries) {
                     V newValue = function.apply(node.key, node.value);
                     if (newValue != null && !this.value.isInstance(newValue))
                         throw new IllegalArgumentException();
                     node.value = newValue;
-                }
             }
-        }
     }
 
     /**
@@ -701,7 +669,7 @@ public class CustomMap<K, V> implements Map<K, V> {
                         stringBuilder.append(", ");
                     stringBuilder.append(entry.key).append("=").append(entry.value);
                     first = false;
-            }
+                }
         return stringBuilder.append("}").toString();
     }
 
@@ -734,6 +702,27 @@ public class CustomMap<K, V> implements Map<K, V> {
         entryIndex.add(new Node(key, value));
         map[index] = entryIndex;
         size++;
+    }
+
+    /**
+     * Constructs an empty {@code CustomMap} with the specified key and value types and an initial
+     * capacity set to the smallest prime number greater than or equal to the given {@code mapSize}.
+     * This constructor is used internally for resizing operations (e.g., during {@code expand} or
+     * {@code reduce}). The map uses a hash table with chaining (via {@link ArrayList}) to handle
+     * collisions and resizes when the load factor (0.75) is exceeded.
+     *
+     * @param key the {@code Class} object representing the type of keys in this map
+     * @param value the {@code Class} object representing the type of values in this map
+     * @param mapSize the desired initial capacity (adjusted to the nearest prime number)
+     * @throws IllegalArgumentException if the key or value class is null
+     */
+    private CustomMap(final Class<K> key, final Class<V> value, final int mapSize) {
+        if(key == null || value == null)
+            throw new IllegalArgumentException();
+        this.mapSize = getClosestPrime(mapSize);
+        this.map = new ArrayList[mapSize];
+        this.key = key;
+        this.value = value;
     }
 
     /**
@@ -804,16 +793,14 @@ public class CustomMap<K, V> implements Map<K, V> {
      * using {@code put}, and updates the internal array.
      */
     private void reduce() {
-        int newMapSize = getClosestPrime((int) (size / LOAD_FACTOR));
-        if(newMapSize < mapSize) {
-            mapSize = newMapSize;
-            CustomMap newMap = new CustomMap<>(key, value, mapSize);
-            Arrays.stream(map)
-                    .filter(Objects::nonNull)
-                    .flatMap(Collection::stream)
-                    .forEach(item -> newMap.put(item.key, item.value));
-            map = newMap.map;
-        }
+        mapSize = getClosestPrime((int) (size / LOAD_FACTOR));
+        CustomMap newMap = new CustomMap<>(key, value, mapSize);
+        Arrays.stream(map)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .forEach(item -> newMap.put(item.key, item.value));
+        map = newMap.map;
+
     }
 
     /**
@@ -828,7 +815,7 @@ public class CustomMap<K, V> implements Map<K, V> {
     private V removeItem(final ArrayList<Node> entryArrayList, final int index) {
         Node removed = entryArrayList.remove(index);
         size--;
-        if(mapSize > 17 && size <= mapSize / 4)
+        if(size <= mapSize / 4)
             reduce();
         return removed.value;
     }
