@@ -41,7 +41,7 @@ All methods implemented are identical to those found in the Java [Map](https://d
 | **size()**                          | O(1)                              | O(1)                              | Tie    |
 | **toString()**                      | O(n)                              | O(n)                              | Tie    |
 | **values()**                        | O(n)                              | O(n)                              | Tie    |
-- 
+
 ## Time Complexity Comparison
 
 | Method                              | CustomMap | HashMap  | Winner |
