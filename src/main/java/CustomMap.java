@@ -558,11 +558,10 @@ public class CustomMap<K, V> implements Map<K, V> {
             Node<K, V> previous = null;
             for(Node<K, V> entry = head; entry != null; entry = entry.next) {
                 if(entry.key.equals(key) && entry.value.equals(value)) {
-                    if(previous == null) {
+                    if(previous == null)
                         map[index] = entry.next;
-                    } else {
+                    else
                         previous.next = entry.next;
-                    }
                     size--;
                     if (mapSize > 17 && size <= mapSize / 4)
                         reduce();
@@ -614,12 +613,11 @@ public class CustomMap<K, V> implements Map<K, V> {
         if (!this.key.isInstance(key) || !this.value.isInstance(newValue))
             throw new IllegalArgumentException();
         int index = hash(key);
-        for (Node<K, V> node = map[index]; node != null; node = node.next) {
+        for (Node<K, V> node = map[index]; node != null; node = node.next)
             if (node.key.equals(key) && Objects.equals(node.value, oldValue)) {
                 node.value = newValue;
                 return true;
             }
-        }
         return false;
     }
 
@@ -638,15 +636,13 @@ public class CustomMap<K, V> implements Map<K, V> {
     public void replaceAll(final BiFunction<? super K, ? super V, ? extends V> function) {
         if (function == null)
             throw new IllegalArgumentException();
-        for (Node<K, V> node : map) {
-            for (Node<K, V> nodeInner = node; nodeInner != null; nodeInner = nodeInner.next) { // Changed from entry
+        for (Node<K, V> node : map)
+            for (Node<K, V> nodeInner = node; nodeInner != null; nodeInner = nodeInner.next) {
                 V newValue = function.apply(nodeInner.key, nodeInner.value);
-                if (newValue != null && !this.value.isInstance(newValue)) {
+                if (newValue != null && !this.value.isInstance(newValue))
                     throw new IllegalArgumentException();
-                }
                 nodeInner.value = newValue;
             }
-        }
     }
 
     /**
@@ -709,11 +705,9 @@ public class CustomMap<K, V> implements Map<K, V> {
         Node<K, V>[] oldMap = map;
         map = new Node[mapSize];
         size = 0;
-        for(Node<K, V> entry : oldMap) {
-            for(Node<K, V> node =  entry; node != null; node = node.next) {
+        for(Node<K, V> entry : oldMap)
+            for (Node<K, V> node = entry; node != null; node = node.next)
                 put(node.key, node.value);
-            }
-        }
     }
 
     /**
@@ -773,11 +767,9 @@ public class CustomMap<K, V> implements Map<K, V> {
         Node<K, V>[] oldMap = map;
         map = new Node[mapSize];
         size = 0;
-        for (Node<K, V> entry : oldMap) {
-            for (Node<K, V> e = entry; e != null; e = e.next) {
+        for (Node<K, V> entry : oldMap)
+            for (Node<K, V> e = entry; e != null; e = e.next)
                 put(e.key, e.value);
-            }
-        }
     }
 
     /**
@@ -790,14 +782,13 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @return the previous value associated with the key, or {@code null} if none
      */
     private V updateExistingChain(final int index, final K key, final V value) {
-        for (Node<K, V> e = map[index]; e != null; e = e.next) {
+        for (Node<K, V> e = map[index]; e != null; e = e.next)
             if (e.key.equals(key)) {
                 V oldValue = e.value;
                 e.value = value;
                 return oldValue;
             }
-        }
-        map[index] = new Node<>(key, value, map[index]); // Prepend new node
+        map[index] = new Node<>(key, value, map[index]);
         return null;
     }
 
