@@ -29,7 +29,6 @@ public class CustomMapPerformanceTest {
             long valuesTime = benchmarkValues(size);
             long clearTime = benchmarkClear(size);
             long equalsTime = benchmarkEquals(size);
-            long hashCodeTime = benchmarkHashCode(size);
             long toStringTime = benchmarkToString(size);
             long entrySetTime = benchmarkEntrySet(size);
             long putAllTime = benchmarkPutAll(size, random);
@@ -44,7 +43,7 @@ public class CustomMapPerformanceTest {
                     size, putTime, getTime, getOrDefaultTime, removeTime, removeWithValueTime,
                     containsKeyTime, containsValueTime, putIfAbsentTime, replaceTime,
                     replaceWithOldNewTime, keySetTime, valuesTime, clearTime,
-                    equalsTime, hashCodeTime, toStringTime, entrySetTime, putAllTime,
+                    equalsTime, toStringTime, entrySetTime, putAllTime,
                     computeTime, computeIfAbsentTime, computeIfPresentTime, forEachTime,
                     mergeTime, replaceAllTime
             };
@@ -52,7 +51,7 @@ public class CustomMapPerformanceTest {
 
         try (FileWriter writer = new FileWriter("CustomMap_performance.csv")) {
             writer.write("Size;put(K,V);get(K);getOrDefault(K,V);remove(K);remove(K,V);containsKey(K);containsValue(V);" +
-                    "putIfAbsent(K,V);replace(K,V);replace(K,V,V);keySet();values();clear();equals(Object o);hashCode();" +
+                    "putIfAbsent(K,V);replace(K,V);replace(K,V,V);keySet();values();clear();equals(Object o);" +
                     "toString();entrySet();putAll(Map);compute(K,BiFunction);computeIfAbsent(K,Function);" +
                     "computeIfPresent(K,BiFunction);forEach(BiConsumer);merge(K,V,BiFunction);replaceAll(BiFunction)\n");
             for (long[] row : results) {
@@ -199,14 +198,6 @@ public class CustomMapPerformanceTest {
         populateMap(map2, size);
         long start = System.nanoTime();
         map1.equals(map2);
-        return System.nanoTime() - start;
-    }
-
-    private static long benchmarkHashCode(int size) {
-        CustomMap<Integer, String> map = new CustomMap(Integer.class, String.class);
-        populateMap(map, size);
-        long start = System.nanoTime();
-        map.hashCode();
         return System.nanoTime() - start;
     }
 
