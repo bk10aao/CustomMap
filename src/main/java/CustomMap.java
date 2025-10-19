@@ -41,7 +41,7 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     /**
      * Constructs an empty {@code CustomMap} with the specified key and value types and an initial
-     * capacity of 17 buckets. The map uses a hash table with chaining (via {@link ArrayList}) to handle
+     * capacity of 17 buckets. The map uses a hash table with chaining (via a linked Node structure) to handle
      * collisions and resizes when the load factor (0.75) is exceeded.
      *
      * @param key the {@code Class} object representing the type of keys in this map
