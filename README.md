@@ -10,37 +10,37 @@ All methods implemented are identical to those found in the Java [Map](https://d
 
 ## Time Complexity
 
-| Method                              | CustomMap                         | HashMap                           | Winner |
-|-------------------------------------|-----------------------------------|-----------------------------------|--------|
-| **clear()**                         | O(m)                              | O(m)                              | Tie    |
-| **compute(K, BiFunction)**          | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **computeIfAbsent(K, Function)**    | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **computeIfPresent(K, BiFunction)** | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **containsKey(Object)**             | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **containsValue(Object)**           | O(n)                              | O(n)                              | Tie    |
-| **entrySet()**                      | O(n)                              | O(n)                              | Tie    |
-| **equals(Object)**                  | O(n)                              | O(n)                              | Tie    |
-| **expand()**                        | O(m + n)                          | O(m + n)                          | Tie    |
-| **forEach(BiConsumer)**             | O(n)                              | O(n)                              | Tie    |
-| **get(Object)**                     | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **getOrDefault(Object, V)**         | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **hash(Object)**                    | O(1)                              | O(1)                              | Tie    |
-| **hashCode()**                      | O(n)                              | O(n)                              | Tie    |
-| **isEmpty()**                       | O(1)                              | O(1)                              | Tie    |
-| **keySet()**                        | O(n)                              | O(n)                              | Tie    |
-| **merge(K, V, BiFunction)**         | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **put(K, V)**                       | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **putAll(Map)**                     | O(m' + n') avg, O(m' + n'n) worst | O(m' + n') avg, O(m' + n'n) worst | Tie    |
-| **putIfAbsent(K, V)**               | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **reduce()**                        | O(m + n)                          | O(m + n)                          | Tie    |
-| **remove(Object)**                  | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **remove(Object, Object)**          | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **replace(K, V)**                   | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **replace(K, V, V)**                | O(1) avg, O(n) worst              | O(1) avg, O(n) worst              | Tie    |
-| **replaceAll(BiFunction)**          | O(n)                              | O(n)                              | Tie    |
-| **size()**                          | O(1)                              | O(1)                              | Tie    |
-| **toString()**                      | O(n)                              | O(n)                              | Tie    |
-| **values()**                        | O(n)                              | O(n)                              | Tie    |
+| Method                              | CustomMap                             | HashMap                               | Winner |
+|-------------------------------------|---------------------------------------|---------------------------------------|--------|
+| **clear()**                         | O(m)                                  | O(m)                                  | Tie    |
+| **compute(K, BiFunction)**          | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **computeIfAbsent(K, Function)**    | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **computeIfPresent(K, BiFunction)** | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **containsKey(Object)**             | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **containsValue(Object)**           | O(n)                                  | O(n)                                  | Tie    |
+| **entrySet()**                      | O(n)                                  | O(n)                                  | Tie    |
+| **equals(Object)**                  | O(n)                                  | O(n)                                  | Tie    |
+| **expand()**                        | O(m + n)                              | O(m + n)                              | Tie    |
+| **forEach(BiConsumer)**             | O(n)                                  | O(n)                                  | Tie    |
+| **get(Object)**                     | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **getOrDefault(Object, V)**         | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **hash(Object)**                    | O(1)                                  | O(1)                                  | Tie    |
+| **hashCode()**                      | O(n)                                  | O(n)                                  | Tie    |
+| **isEmpty()**                       | O(1)                                  | O(1)                                  | Tie    |
+| **keySet()**                        | O(n)                                  | O(n)                                  | Tie    |
+| **merge(K, V, BiFunction)**         | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **put(K, V)**                       | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **putAll(Map)**                     | O(m' + n') average, O(m' + n'n) worst | O(m' + n') average, O(m' + n'n) worst | Tie    |
+| **putIfAbsent(K, V)**               | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **reduce()**                        | O(m + n)                              | O(m + n)                              | Tie    |
+| **remove(Object)**                  | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **remove(Object, Object)**          | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **replace(K, V)**                   | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **replace(K, V, V)**                | O(1) average, O(n) worst              | O(1) average, O(n) worst              | Tie    |
+| **replaceAll(BiFunction)**          | O(n)                                  | O(n)                                  | Tie    |
+| **size()**                          | O(1)                                  | O(1)                                  | Tie    |
+| **toString()**                      | O(n)                                  | O(n)                                  | Tie    |
+| **values()**                        | O(n)                                  | O(n)                                  | Tie    |
 
 ## Time Complexity Comparison
 
