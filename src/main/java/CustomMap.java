@@ -523,10 +523,13 @@ public class CustomMap<K, V> implements Map<K, V> {
         Node<K, V> prev = null;
         for (Node<K, V> node = head; node != null; node = node.next) {
             if (node.key.equals(key)) {
-                if (prev == null) map[index] = node.next;
-                else prev.next = node.next;
+                if (prev == null)
+                    map[index] = node.next;
+                else
+                    prev.next = node.next;
                 size--;
-                if (mapSize > 17 && size <= mapSize / 4) reduce();
+                if (mapSize > 17 && size <= mapSize / 4)
+                    reduce();
                 return node.value;
             }
             prev = node;
@@ -671,7 +674,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             for (Node<K, V> node = entry; node != null; node = node.next) {
                 if (!first)
                     stringBuilder.append(", ");
-                stringBuilder.append(node.key).append("=").append(node.value);
+                stringBuilder.append(node);
                 first = false;
             }
         return stringBuilder.append("}").toString();
@@ -783,11 +786,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     private V updateExistingChain(final int index, final K key, final V value) {
         for (Node<K, V> e = map[index]; e != null; e = e.next)
-            if (e.key.equals(key)) {
-                V oldValue = e.value;
-                e.value = value;
-                return oldValue;
-            }
+            if (e.key.equals(key))
+                return e.setValue(value);
         map[index] = new Node<>(key, value, map[index]);
         return null;
     }
@@ -825,6 +825,16 @@ public class CustomMap<K, V> implements Map<K, V> {
             this.key = key;
             this.value = value;
             this.next = next;
+        }
+
+        public V setValue(V newValue) {
+            V oldValue = value;
+            value = newValue;
+            return oldValue;
+        }
+
+        public final String toString() {
+            return key + "=" + value;
         }
     }
 }
