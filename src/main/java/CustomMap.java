@@ -138,16 +138,15 @@ public class CustomMap<K, V> implements Map<K, V> {
             throw new NullPointerException();
         if (!this.key.isInstance(key))
             throw new IllegalArgumentException();
-        if (!containsKey(key)) {
-            V newValue = mappingFunction.apply(key);
-            if (newValue != null) {
-                if (!this.value.isInstance(newValue))
-                    throw new IllegalArgumentException();
-                put(key, newValue);
-            }
-            return newValue;
+        if(containsKey(key))
+            return get(key);
+        V newValue = mappingFunction.apply(key);
+        if (newValue != null) {
+            if (!this.value.isInstance(newValue))
+                throw new IllegalArgumentException();
+            put(key, newValue);
         }
-        return get(key);
+        return newValue;
     }
 
     /**
@@ -182,19 +181,17 @@ public class CustomMap<K, V> implements Map<K, V> {
             throw new NullPointerException();
         if (!this.key.isInstance(key))
             throw new IllegalArgumentException();
-        if (containsKey(key)) {
-            V oldValue = get(key);
-            V newValue = remappingFunction.apply(key, oldValue);
-            if (newValue != null && !this.value.isInstance(newValue))
-                throw new IllegalArgumentException();
-            if (newValue == null) {
-                remove(key);
-                return null;
-            }
+        if(!containsKey(key))
+            return null;
+        V oldValue = get(key);
+        V newValue = remappingFunction.apply(key, oldValue);
+        if (newValue != null && !this.value.isInstance(newValue))
+            throw new IllegalArgumentException();
+        if (newValue == null)
+            remove(key);
+        else
             put(key, newValue);
-            return newValue;
-        }
-        return null;
+        return newValue;
     }
 
     /**
@@ -555,23 +552,23 @@ public class CustomMap<K, V> implements Map<K, V> {
     public boolean remove(final Object key, final Object value) {
         if (key == null || value == null)
             throw new NullPointerException();
-        if (containsKey(key)) {
-            int index = hash(key);
-            Node<K, V> head = map[index];
-            Node<K, V> previous = null;
-            for(Node<K, V> entry = head; entry != null; entry = entry.next) {
-                if(entry.key.equals(key) && entry.value.equals(value)) {
-                    if(previous == null)
-                        map[index] = entry.next;
-                    else
-                        previous.next = entry.next;
-                    size--;
-                    if (mapSize > 17 && size <= mapSize / 4)
-                        reduce();
-                    return true;
-                }
-                previous = entry;
+        if(!containsKey(key))
+            return false;
+        int index = hash(key);
+        Node<K, V> head = map[index];
+        Node<K, V> previous = null;
+        for(Node<K, V> entry = head; entry != null; entry = entry.next) {
+            if(entry.key.equals(key) && entry.value.equals(value)) {
+                if(previous == null)
+                    map[index] = entry.next;
+                else
+                    previous.next = entry.next;
+                size--;
+                if (mapSize > 17 && size <= mapSize / 4)
+                    reduce();
+                return true;
             }
+            previous = entry;
         }
         return false;
     }
@@ -689,6 +686,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public Collection<V> values() {
         List<V> list = new ArrayList<>();
+        if(size == 0)
+            return list;
         for (Node<K, V> entry : map)
             for (Node<K, V> node = entry; node != null; node = node.next)
                 list.add(node.value);
