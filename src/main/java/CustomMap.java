@@ -517,19 +517,11 @@ public class CustomMap<K, V> implements Map<K, V> {
         if (key == null) throw new NullPointerException();
         int index = hash(key);
         Node<K, V> head = map[index];
-        Node<K, V> prev = null;
+        Node<K, V> previous = null;
         for (Node<K, V> node = head; node != null; node = node.next) {
-            if (node.key.equals(key)) {
-                if (prev == null)
-                    map[index] = node.next;
-                else
-                    prev.next = node.next;
-                size--;
-                if (mapSize > 17 && size <= mapSize / 4)
-                    reduce();
+            if (remove(key, node, previous, index))
                 return node.value;
-            }
-            prev = node;
+            previous = node;
         }
         return null;
     }
@@ -558,20 +550,14 @@ public class CustomMap<K, V> implements Map<K, V> {
         Node<K, V> head = map[index];
         Node<K, V> previous = null;
         for(Node<K, V> entry = head; entry != null; entry = entry.next) {
-            if(entry.key.equals(key) && entry.value.equals(value)) {
-                if(previous == null)
-                    map[index] = entry.next;
-                else
-                    previous.next = entry.next;
-                size--;
-                if (mapSize > 17 && size <= mapSize / 4)
-                    reduce();
-                return true;
-            }
+            if(entry.key.equals(key) && entry.value.equals(value))
+                return remove(previous, index, entry);
             previous = entry;
         }
         return false;
     }
+
+
 
     /**
      * Replaces the value associated with the specified key with the given value, if the key is present
@@ -772,6 +758,24 @@ public class CustomMap<K, V> implements Map<K, V> {
         for (Node<K, V> entry : oldMap)
             for (Node<K, V> e = entry; e != null; e = e.next)
                 put(e.key, e.value);
+    }
+
+    private boolean remove(Node<K, V> previous, int index, Node<K, V> entry) {
+        if(previous == null)
+            map[index] = entry.next;
+        else
+            previous.next = entry.next;
+        size--;
+        if (mapSize > 17 && size <= mapSize / 4)
+            reduce();
+        return true;
+    }
+
+    private boolean remove(Object key, Node<K, V> node, Node<K, V> previous, int index) {
+        if (node.key.equals(key)) {
+            return remove(previous, index, node);
+        }
+        return false;
     }
 
     /**
