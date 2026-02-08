@@ -860,18 +860,36 @@ public class CustomMap<K, V> implements Map<K, V> {
             this.value = value;
         }
 
+        /**
+         * Constructs a new entry with the specified key and value and links next Node.
+         *
+         * @param key the key for this entry
+         * @param value the value for this entry (maybe null)
+         * @param next the Node to link as next
+         */
         Node(K key, V value, Node<K, V> next) {
             this.key = key;
             this.value = value;
             this.next = next;
         }
 
+        /**
+         * Sets the value of the current Node.
+         *
+         * @param newValue the new value for the  node
+         */
         public V setValue(V newValue) {
             V oldValue = value;
             value = newValue;
             return oldValue;
         }
 
+        /**
+         * Returns a string representation of the node, in the format <code>{key=value}</code>.
+         * The string contains the key-value, with separated an equals sign..
+         *
+         * @return a string representation of this map
+         */
         public final String toString() {
             return key + "=" + value;
         }
