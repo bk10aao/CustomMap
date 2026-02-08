@@ -557,8 +557,6 @@ public class CustomMap<K, V> implements Map<K, V> {
         return false;
     }
 
-
-
     /**
      * Replaces the value associated with the specified key with the given value, if the key is present
      * (optional operation). If no mapping exists for the key, no change is made. The map may resize if
@@ -760,6 +758,25 @@ public class CustomMap<K, V> implements Map<K, V> {
                 put(e.key, e.value);
     }
 
+    /**
+     * Removes the specified entry from the hash map at the given index
+     * and updates the linked list accordingly.
+     * <p>
+     * If {@code previous} is {@code null}, the entry is the first node in the bucket
+     * and the bucket head is updated. Otherwise, the entry is unlinked from
+     * the previous node.
+     * </p>
+     * <p>
+     * Decrements the size counter and triggers resizing (down-sizing) if the
+     * load becomes sufficiently low (size ≤ mapSize/4 and mapSize > 17).
+     * </p>
+     *
+     * @param previous the node before the one being removed, or {@code null}
+     *                 if the node to remove is the first in the bucket
+     * @param index    the bucket index in the table where the entry resides
+     * @param entry    the node to be removed
+     * @return {@code true} (always, as this internal method assumes the entry exists)
+     */
     private boolean remove(Node<K, V> previous, int index, Node<K, V> entry) {
         if(previous == null)
             map[index] = entry.next;
@@ -771,6 +788,25 @@ public class CustomMap<K, V> implements Map<K, V> {
         return true;
     }
 
+    /**
+     * Attempts to remove a node with the specified key from the chain.
+     * <p>
+     * This method checks if the current {@code node}'s key matches the given key.
+     * If it does, it delegates to {@link #remove(Node, int, Node)} to perform
+     * the actual removal from the bucket chain.
+     * </p>
+     * <p>
+     * This is typically used while traversing a bucket's linked list.
+     * </p>
+     *
+     * @param key      the key to search for and remove
+     * @param node     the current node being examined
+     * @param previous the node before {@code node}, or {@code null} if {@code node}
+     *                 is the first in the bucket
+     * @param index    the bucket index in the table (passed to the internal remove method)
+     * @return {@code true} if a node with the specified key was found and removed,
+     *         {@code false} otherwise
+     */
     private boolean remove(Object key, Node<K, V> node, Node<K, V> previous, int index) {
         if (node.key.equals(key)) {
             return remove(previous, index, node);
