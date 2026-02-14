@@ -103,8 +103,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      *         type specified at construction
      */
     public V compute(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        if (key == null || remappingFunction == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(remappingFunction);
         if (!this.key.isInstance(key))
             throw new IllegalArgumentException();
         V oldValue = get(key);
@@ -134,8 +134,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      *         type specified at construction
      */
     public V computeIfAbsent(final K key, final Function<? super K, ? extends V> mappingFunction) {
-        if (key == null || mappingFunction == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(mappingFunction);
         if (!this.key.isInstance(key))
             throw new IllegalArgumentException();
         if(containsKey(key))
@@ -177,8 +177,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      *         type specified at construction
      */
     public V computeIfPresent(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        if (key == null || remappingFunction == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(remappingFunction);
         if (!this.key.isInstance(key))
             throw new IllegalArgumentException();
         if(!containsKey(key))
@@ -204,8 +204,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @throws NullPointerException if the specified key is null
      */
     public boolean containsKey(final Object key) {
-        if (key == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key);
         int index = hash(key);
         for(Node<K, V> node = map[index]; node != null; node = node.next)
             if(node.key.equals(key))
@@ -261,7 +260,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @see #hashCode()
      * @see Objects#equals(Object, Object)
      */
-    @Override
     public boolean equals(final Object o) {
         if (this == o)
             return true;
@@ -286,8 +284,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @throws NullPointerException if the action is null
      */
     public void forEach(final BiConsumer<? super K, ? super V> action) {
-        if (action == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(action);
         for (Node<K, V> node : map)
             for (Node<K, V> n = node; n != null; n = n.next)
                 action.accept(n.key, n.value);
@@ -324,8 +321,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @throws ClassCastException if the key is not an instance of the key type specified at construction
      */
     public V getOrDefault(final Object key, final V defaultValue) {
-        if (key == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key);
         int index = hash(key);
         for (Node<K, V> entry = map[index]; entry != null; entry = entry.next)
             if(entry.key.equals(key))
@@ -346,7 +342,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @see #equals(Object)
      * @see Objects#hashCode(Object)
      */
-    @Override
     public int hashCode() {
         int result = 0;
         for (Node<K, V> entry : map)
@@ -411,10 +406,9 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public V merge(final K key, final V value, final BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
-        if (key == null || remappingFunction == null)
-            throw new NullPointerException();
-        if (!this.key.isInstance(key) || !this.value.isInstance(value))
-            throw new IllegalArgumentException();
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(remappingFunction);
+        validateKeyValuePair(key, value);
         V previous = get(key);
         if (previous == null)
             return put(key, value);
@@ -427,6 +421,8 @@ public class CustomMap<K, V> implements Map<K, V> {
             throw new IllegalArgumentException();
         return put(key, newValue);
     }
+
+
 
     /**
      * Associates the specified value with the specified key in this map (optional operation). If the map
@@ -442,8 +438,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public V put(final K key, final V value) {
-        if (!this.key.isInstance(key) || value != null && !this.value.isInstance(value))
-            throw new IllegalArgumentException();
+        validateKeyValuePair(key, value);
         int index = hash(key);
         if(containsKey(key))
             return updateExistingChain(index, key, value);
@@ -473,8 +468,9 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public V putIfAbsent(final K key, final V value) {
-        if(key == null || value == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
+        validateKeyValuePair(key, value);
         return !containsKey(key) ? put(key, value) : getOrDefault(key, null);
     }
 
@@ -491,8 +487,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public void putAll(final Map<? extends K, ? extends V> m) {
-        if(m == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(m);
         int newSize = size + m.size();
         if ((double) newSize / mapSize > LOAD_FACTOR) {
             mapSize = getClosestPrime((int) (newSize / LOAD_FACTOR));
@@ -514,7 +509,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public V remove(final Object key) {
-        if (key == null) throw new NullPointerException();
+        if (key == null)
+            throw new NullPointerException();
         int index = hash(key);
         Node<K, V> head = map[index];
         Node<K, V> previous = null;
@@ -542,8 +538,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public boolean remove(final Object key, final Object value) {
-        if (key == null || value == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
         if(!containsKey(key))
             return false;
         int index = hash(key);
@@ -571,10 +567,9 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public V replace(final K key, final V value) {
-        if (key == null || value == null)
-            throw new NullPointerException();
-        if (!this.key.isInstance(key) || !this.value.isInstance(value))
-            throw new IllegalArgumentException();
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
+        validateKeyValuePair(key, value);
         return containsKey(key) ? put(key, value) : null;
     }
 
@@ -592,10 +587,10 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public boolean replace(final K key, final V oldValue, final V newValue) {
-        if (key == null || oldValue == null || newValue == null)
-            throw new NullPointerException();
-        if (!this.key.isInstance(key) || !this.value.isInstance(newValue))
-            throw new IllegalArgumentException();
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(oldValue);
+        Objects.requireNonNull(newValue);
+        validateKeyValuePair(key, newValue);
         int index = hash(key);
         for (Node<K, V> node = map[index]; node != null; node = node.next)
             if (node.key.equals(key) && Objects.equals(node.value, oldValue)) {
@@ -612,7 +607,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * modifications.
      *
      * @param function the function to compute new values, taking a key and current value
-     * @throws NullPointerException if the function is null
+     * @throws IllegalArgumentException if the function is null
      * @throws IllegalArgumentException if any computed value (if non-null) is not an instance of the
      *         value type specified at construction
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
@@ -645,7 +640,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      *
      * @return a string representation of this map
      */
-    @Override
     public String toString() {
         if(size == 0)
             return "{}";
@@ -730,8 +724,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @throws NullPointerException if the key is null
      */
     private int hash(final Object key) {
-        if (key == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key);
         int h = key.hashCode();
         h = (h ^ (h >>> 20) ^ (h >>> 12)) & 0x7FFFFFFF;
         return h % mapSize;
@@ -831,6 +824,11 @@ public class CustomMap<K, V> implements Map<K, V> {
         return null;
     }
 
+    private void validateKeyValuePair(K key, V value) {
+        if (!this.key.isInstance(key) || !this.value.isInstance(value)  || value == null)
+            throw new IllegalArgumentException();
+    }
+
     /**
      * Array of prime numbers used as bucket sizes for the map's internal array during resizing.
      */
@@ -886,7 +884,7 @@ public class CustomMap<K, V> implements Map<K, V> {
 
         /**
          * Returns a string representation of the node, in the format <code>{key=value}</code>.
-         * The string contains the key-value, with separated an equals sign..
+         * The string contains the key-value, with separated an equals sign.
          *
          * @return a string representation of this map
          */
