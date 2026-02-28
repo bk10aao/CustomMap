@@ -801,9 +801,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      *         {@code false} otherwise
      */
     private boolean remove(Object key, Node<K, V> node, Node<K, V> previous, int index) {
-        if (node.key.equals(key)) {
+        if (node.key.equals(key))
             return remove(previous, index, node);
-        }
         return false;
     }
 
