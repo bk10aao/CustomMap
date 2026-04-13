@@ -445,33 +445,13 @@ public class CustomMap<K, V> implements Map<K, V> {
         Node<K, V> head = map[index];
         V result = null;
         if (head == null)
-            map[index] = new Node<>(key, value);
+            map[index] = new Node<>(key, value, null);
         else
             result = updateExistingChain(index, key, value);
         size++;
         if ((double) size / (double) mapSize > LOAD_FACTOR)
             expand();
         return result;
-    }
-
-    /**
-     * Associates the specified value with the specified key if the key is not already associated with a
-     * value (optional operation). If the key exists, no change is made. The map may resize if the load
-     * factor (0.75) is exceeded.
-     *
-     * @param key the key with which the specified value is to be associated
-     * @param value the value to be associated with the key
-     * @return the current value associated with the key, or {@code null} if none
-     * @throws NullPointerException if the key or value is null
-     * @throws IllegalArgumentException if the key or value is not an instance of the key or value type
-     *         specified at construction
-     * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
-     */
-    public V putIfAbsent(final K key, final V value) {
-        Objects.requireNonNull(key);
-        Objects.requireNonNull(value);
-        validateKeyValuePair(key, value);
-        return !containsKey(key) ? put(key, value) : getOrDefault(key, null);
     }
 
     /**
@@ -495,6 +475,26 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
         for(Map.Entry<? extends K, ? extends V> node : m.entrySet())
             put(node.getKey(), node.getValue());
+    }
+
+    /**
+     * Associates the specified value with the specified key if the key is not already associated with a
+     * value (optional operation). If the key exists, no change is made. The map may resize if the load
+     * factor (0.75) is exceeded.
+     *
+     * @param key the key with which the specified value is to be associated
+     * @param value the value to be associated with the key
+     * @return the current value associated with the key, or {@code null} if none
+     * @throws NullPointerException if the key or value is null
+     * @throws IllegalArgumentException if the key or value is not an instance of the key or value type
+     *         specified at construction
+     * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
+     */
+    public V putIfAbsent(final K key, final V value) {
+        Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
+        validateKeyValuePair(key, value);
+        return !containsKey(key) ? put(key, value) : getOrDefault(key, null);
     }
 
     /**
@@ -845,17 +845,6 @@ public class CustomMap<K, V> implements Map<K, V> {
         final K key;
         V value;
         Node<K, V> next;
-
-        /**
-         * Constructs a new entry with the specified key and value.
-         *
-         * @param key the key for this entry
-         * @param value the value for this entry (maybe null)
-         */
-        Node(final K key, V value) {
-            this.key = key;
-            this.value = value;
-        }
 
         /**
          * Constructs a new entry with the specified key and value and links next Node.
