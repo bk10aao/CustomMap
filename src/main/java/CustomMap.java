@@ -105,12 +105,10 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V compute(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(remappingFunction);
-        if (!this.key.isInstance(key))
-            throw new IllegalArgumentException();
+        checkMatchingKeyInstance(key);
         V oldValue = get(key);
         V newValue = remappingFunction.apply(key, oldValue);
-        if (newValue != null && !this.value.isInstance(newValue))
-            throw new IllegalArgumentException();
+        checkMatchingValueInstance(newValue);
         if (newValue == null && oldValue != null) {
             remove(key);
             return null;
@@ -136,14 +134,12 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V computeIfAbsent(final K key, final Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(mappingFunction);
-        if (!this.key.isInstance(key))
-            throw new IllegalArgumentException();
+        checkMatchingKeyInstance(key);
         if(containsKey(key))
             return get(key);
         V newValue = mappingFunction.apply(key);
         if (newValue != null) {
-            if (!this.value.isInstance(newValue))
-                throw new IllegalArgumentException();
+            checkMatchingValueInstance(newValue);
             put(key, newValue);
         }
         return newValue;
@@ -179,14 +175,12 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V computeIfPresent(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(remappingFunction);
-        if (!this.key.isInstance(key))
-            throw new IllegalArgumentException();
+        checkMatchingKeyInstance(key);
         if(!containsKey(key))
             return null;
         V oldValue = get(key);
         V newValue = remappingFunction.apply(key, oldValue);
-        if (newValue != null && !this.value.isInstance(newValue))
-            throw new IllegalArgumentException();
+        checkMatchingValueInstance(newValue);
         if (newValue == null)
             remove(key);
         else
@@ -417,12 +411,9 @@ public class CustomMap<K, V> implements Map<K, V> {
             remove(key);
             return null;
         }
-        if (!this.value.isInstance(newValue))
-            throw new IllegalArgumentException();
+        checkMatchingValueInstance(newValue);
         return put(key, newValue);
     }
-
-
 
     /**
      * Associates the specified value with the specified key in this map (optional operation). If the map
@@ -470,7 +461,6 @@ public class CustomMap<K, V> implements Map<K, V> {
         Objects.requireNonNull(m);
         int newSize = size + m.size();
         if ((double) newSize / mapSize > LOAD_FACTOR) {
-            mapSize = getClosestPrime((int) (newSize / LOAD_FACTOR));
             expand();
         }
         for(Map.Entry<? extends K, ? extends V> node : m.entrySet())
@@ -509,8 +499,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public V remove(final Object key) {
-        if (key == null)
-            throw new NullPointerException();
+        Objects.requireNonNull(key);
         int index = hash(key);
         Node<K, V> head = map[index];
         Node<K, V> previous = null;
@@ -618,8 +607,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         for (Node<K, V> node : map)
             for (Node<K, V> nodeInner = node; nodeInner != null; nodeInner = nodeInner.next) {
                 V newValue = function.apply(nodeInner.key, nodeInner.value);
-                if (newValue != null && !this.value.isInstance(newValue))
-                    throw new IllegalArgumentException();
+                checkMatchingValueInstance(newValue);
                 nodeInner.value = newValue;
             }
     }
@@ -823,8 +811,40 @@ public class CustomMap<K, V> implements Map<K, V> {
         return null;
     }
 
+    /**
+     * Validates that the key value pair match that of Map instance
+     *
+     * @param key the {@code Class} object representing the type of key to compare to class instance
+     * @param value the {@code Class} object representing the type of value to compare to class instance
+     *
+     * @throws IllegalArgumentException if key does not match that of class Key instance.
+     * @throws IllegalArgumentException if value does not match that of class Value instance
+     * @throws IllegalArgumentException if value null
+     */
     private void validateKeyValuePair(K key, V value) {
-        if (!this.key.isInstance(key) || !this.value.isInstance(value)  || value == null)
+        checkMatchingKeyInstance(key);
+        checkMatchingValueInstance(value);
+    }
+
+    /**
+     * Validates that the key is of matching {@code Class} key instance type
+     *
+     * @param key the {@code Class} object representing the type of key to compare to class instance
+     * @throws IllegalArgumentException if key does not match that of class Key instance.
+     */
+    private void checkMatchingKeyInstance(K key) {
+        if(!this.key.isInstance(key))
+            throw new IllegalArgumentException();
+    }
+
+    /**
+     * Validates that the value is of matching {@code Class} value instance type and that it is not {@code null}
+     * @param newValue the {@code Class} object representing the type of value to compare to class instance
+     * @throws IllegalArgumentException if value does not match that of class Value instance.
+     * @throws IllegalArgumentException if value is {@code null}.
+     */
+    private void checkMatchingValueInstance(V newValue) {
+        if (newValue != null && !this.value.isInstance(newValue))
             throw new IllegalArgumentException();
     }
 
