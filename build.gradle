@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework:spring-core:6.2.0'
+    implementation 'org.springframework:spring-core:6.2.11'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
 }
 
