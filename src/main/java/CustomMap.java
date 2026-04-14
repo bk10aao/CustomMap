@@ -1,3 +1,5 @@
+import org.springframework.util.Assert;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,8 +51,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @throws IllegalArgumentException if the key or value class is null
      */
     public CustomMap(final Class<K> key, final Class<V> value) {
-        if(key == null || value == null)
-            throw new IllegalArgumentException();
+        Assert.notNull(key, "key must not be null");
+        Assert.notNull(value, "value must not be null");
         this.map = new Node[primes[0]];
         this.key = key;
         this.value = value;
@@ -105,7 +107,7 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V compute(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(remappingFunction);
-        checkMatchingKeyInstance(key);
+        Assert.isInstanceOf(this.key, key);
         V oldValue = get(key);
         V newValue = remappingFunction.apply(key, oldValue);
         checkMatchingValueInstance(newValue);
@@ -134,7 +136,7 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V computeIfAbsent(final K key, final Function<? super K, ? extends V> mappingFunction) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(mappingFunction);
-        checkMatchingKeyInstance(key);
+        Assert.isInstanceOf(this.key, key);
         if(containsKey(key))
             return get(key);
         V newValue = mappingFunction.apply(key);
@@ -175,7 +177,7 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V computeIfPresent(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(key);
         Objects.requireNonNull(remappingFunction);
-        checkMatchingKeyInstance(key);
+        Assert.isInstanceOf(this.key, key);
         if(!containsKey(key))
             return null;
         V oldValue = get(key);
@@ -602,8 +604,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public void replaceAll(final BiFunction<? super K, ? super V, ? extends V> function) {
-        if (function == null)
-            throw new IllegalArgumentException();
+        Assert.notNull(function, "function must not be null");
         for (Node<K, V> node : map)
             for (Node<K, V> nodeInner = node; nodeInner != null; nodeInner = nodeInner.next) {
                 V newValue = function.apply(nodeInner.key, nodeInner.value);
@@ -822,30 +823,18 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @throws IllegalArgumentException if value null
      */
     private void validateKeyValuePair(K key, V value) {
-        checkMatchingKeyInstance(key);
+        Assert.isInstanceOf(this.key, key);
         checkMatchingValueInstance(value);
-    }
-
-    /**
-     * Validates that the key is of matching {@code Class} key instance type
-     *
-     * @param key the {@code Class} object representing the type of key to compare to class instance
-     * @throws IllegalArgumentException if key does not match that of class Key instance.
-     */
-    private void checkMatchingKeyInstance(K key) {
-        if(!this.key.isInstance(key))
-            throw new IllegalArgumentException();
     }
 
     /**
      * Validates that the value is of matching {@code Class} value instance type and that it is not {@code null}
      * @param newValue the {@code Class} object representing the type of value to compare to class instance
      * @throws IllegalArgumentException if value does not match that of class Value instance.
-     * @throws IllegalArgumentException if value is {@code null}.
      */
     private void checkMatchingValueInstance(V newValue) {
-        if (newValue != null && !this.value.isInstance(newValue))
-            throw new IllegalArgumentException();
+        if (newValue != null)
+            Assert.isInstanceOf(this.value, newValue);
     }
 
     /**
