@@ -231,7 +231,6 @@ class CustomMapTest {
         Object value = map.get("123");
         assertEquals(456, value);
         assertEquals(1, map.size());
-
         map.clear();
         value = map.get("123");
         assertNull(value);
@@ -641,8 +640,7 @@ class CustomMapTest {
     public void givenMap_onComputeIfPresentReturningNull_removesEntry() {
         CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
         map.put("key", 100);
-        Integer result = map.computeIfPresent("key", (k, v) -> null);
-        assertNull(result);
+        assertNull(map.computeIfPresent("key", (k, v) -> null));
         assertNull(map.get("key"));
         assertEquals(0, map.size());
     }
@@ -769,8 +767,7 @@ class CustomMapTest {
     public void givenMap_onComputeReturningNull_removesEntry() {
         CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
         map.put("key", 100);
-        Integer result = map.compute("key", (k, v) -> null);
-        assertNull(result);
+        assertNull(map.compute("key", (k, v) -> null));
         assertNull(map.get("key"));
         assertEquals(0, map.size());
     }
@@ -792,5 +789,81 @@ class CustomMapTest {
         assertEquals(150, result);
         assertEquals(150, map.get("key"));
         assertEquals(1, map.size());
+    }
+
+    @Test
+    public void givenEmptyMap_hashCode_returns_0() {
+        assertEquals(0, new CustomMap<>(String.class, Integer.class).hashCode());
+    }
+
+    @Test
+    public void givenTwoMatchingMap_returns_sameHashCode() {
+        CustomMap<String, Integer> map1 = new CustomMap<>(String.class, Integer.class);
+        CustomMap<String, Integer> map2 = new CustomMap<>(String.class, Integer.class);
+        map1.put("A", 1);
+        map1.put("B", 2);
+        map1.put("C", 3);
+        map2.put("A", 1);
+        map2.put("B", 2);
+        map2.put("C", 3);
+        assertEquals(map1, map2);
+        assertEquals(map1.hashCode(), map2.hashCode());
+    }
+
+    @Test
+    void givenTwoMatchingMaps_withDifferentInsertionOrders_returns_sameHashCode() {
+        CustomMap<String, Integer> map1 = new CustomMap<>(String.class, Integer.class);
+        map1.put("X", 10);
+        map1.put("Y", 20);
+        map1.put("Z", 30);
+        CustomMap<String, Integer> map2 = new CustomMap<>(String.class, Integer.class);
+        map2.put("Z", 30);
+        map2.put("X", 10);
+        map2.put("Y", 20);
+        assertEquals(map1, map2);
+        assertEquals(map1.hashCode(), map2.hashCode());
+    }
+
+    @Test
+    void mapsWithDifferentContent_return_differentHashCodes() {
+        CustomMap<String, Integer> map1 = new CustomMap<>(String.class, Integer.class);
+        map1.put("A", 1);
+        map1.put("B", 2);
+        CustomMap<String, Integer> map2 = new CustomMap<>(String.class, Integer.class);
+        map2.put("A", 1);
+        map2.put("B", 99);
+        assertNotEquals(map1, map2);
+        assertNotEquals(map1.hashCode(), map2.hashCode());
+    }
+
+    @Test
+    void givenHashMap_withNullValue_shouldNotReturn_0() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("A", null);
+        map.put("B", 42);
+        assertNotEquals(0, map.hashCode());
+    }
+
+    @Test
+    void givenHashMap_onModification_shouldReturn_differentHashCodes() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        int initialHashCode = map.hashCode();
+        map.put("Key", 100);
+        int updatedHashCode = map.hashCode();
+        assertNotEquals(initialHashCode, updatedHashCode);
+        map.remove("Key");
+        assertEquals(initialHashCode, map.hashCode());
+    }
+
+    @Test
+    void givenMapWithValues_A_1_B_2_onMultipleCalls_shouldReturnConsistentHashCode() {
+        CustomMap<String, Integer> map = new CustomMap<>(String.class, Integer.class);
+        map.put("A", 1);
+        map.put("B", 2);
+        int h1 = map.hashCode();
+        int h2 = map.hashCode();
+        int h3 = map.hashCode();
+        assertEquals(h1, h2);
+        assertEquals(h2, h3);
     }
 }
