@@ -3,6 +3,7 @@ import org.junit.jupiter.api.Test;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -309,10 +310,23 @@ class CustomMapTest {
     }
 
     @Test
+    public void createSameMapTypes_onEquals_returns_true() {
+        CustomMap map = new CustomMap(String.class, Integer.class);
+        assertEquals(map, map);
+    }
+
+    @Test
     public void createTwoEqualMapTypes_onEquals_returns_true() {
         CustomMap map = new CustomMap(String.class, Integer.class);
         CustomMap mapTwo = new CustomMap(String.class, Integer.class);
         assertEquals(map, mapTwo);
+    }
+
+    @Test
+    public void createTwoObjectTypes_onEquals_returns_False() {
+        CustomMap map = new CustomMap(String.class, Integer.class);
+        List<String> arrayList = new ArrayList<>();
+        assertNotEquals(map, arrayList);
     }
 
     @Test
@@ -337,6 +351,24 @@ class CustomMapTest {
     public void createTwoEqualMapTypes_andAddingItems_thatCauseNoMatch_onEquals_returns_false() {
         CustomMap map = new CustomMap(String.class, Integer.class);
         for(int i = 0; i < 10; i++) map.put(String.valueOf(i), i * 10);
+        CustomMap mapTwo = new CustomMap(String.class, Integer.class);
+        for(int i = 0; i < 10; i++) mapTwo.put(String.valueOf(i), i * 100);
+        assertNotEquals(map, mapTwo);
+    }
+
+    @Test
+    public void createTwoDifferentMapTypes__onEquals_returns_false() {
+        CustomMap map = new CustomMap(String.class, Integer.class);
+        for(int i = 0; i < 10; i++) map.put(String.valueOf(i), i * 10);
+        CustomMap mapTwo = new CustomMap(Integer.class, Integer.class);
+        for(int i = 0; i < 10; i++) mapTwo.put(i, i * 100);
+        assertNotEquals(map, mapTwo);
+    }
+
+    @Test
+    public void createTwoMaps_withDiffentSizss_returns_false() {
+        CustomMap map = new CustomMap(String.class, Integer.class);
+        for(int i = 0; i < 5; i++) map.put(String.valueOf(i), i * 10);
         CustomMap mapTwo = new CustomMap(String.class, Integer.class);
         for(int i = 0; i < 10; i++) mapTwo.put(String.valueOf(i), i * 100);
         assertNotEquals(map, mapTwo);
