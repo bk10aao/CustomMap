@@ -414,6 +414,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public V merge(final K key, final V value, final BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(key);
+        Objects.requireNonNull(value);
         Objects.requireNonNull(remappingFunction);
         validateKeyValuePair(key, value);
         V previous = get(key);
