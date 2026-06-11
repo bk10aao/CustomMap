@@ -83,6 +83,7 @@ All methods implemented are identical to those found in the Java [Map](https://d
 - **n'**: Number of entries in the input map.
 
 # Performance vs Java HashMap
+#### Note: The following performance charts designed to be viewed in dark mode.
 
 ![Combined Performance Charts](PerformanceTesting/clear().png)
 ![Combined Performance Charts](PerformanceTesting/compute(K,Bifunction).png)
