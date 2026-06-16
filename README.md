@@ -85,7 +85,7 @@ All methods implemented are identical to those found in the Java [Map](https://d
 # Performance vs Java HashMap
 
 #### Note: The following performance charts are designed to be viewed in dark mode.
-
+![Heatmap](PerformanceTesting/heatmap.png)
 ![Combined Performance Charts](PerformanceTesting/clear().png)
 ![Combined Performance Charts](PerformanceTesting/compute(K,Bifunction).png)
 ![Combined Performance Charts](PerformanceTesting/computeIfPresent(K,BiFunction).png)
@@ -108,4 +108,3 @@ All methods implemented are identical to those found in the Java [Map](https://d
 ![Combined Performance Charts](PerformanceTesting/replace(K,V,V).png)
 ![Combined Performance Charts](PerformanceTesting/toString().png)
 ![Combined Performance Charts](PerformanceTesting/values().png)
-![Heatmap](PerformanceTesting/heatmap.png)
