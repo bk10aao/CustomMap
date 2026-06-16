@@ -108,3 +108,4 @@ All methods implemented are identical to those found in the Java [Map](https://d
 ![Combined Performance Charts](PerformanceTesting/replace(K,V,V).png)
 ![Combined Performance Charts](PerformanceTesting/toString().png)
 ![Combined Performance Charts](PerformanceTesting/values().png)
+![Heatmap](PerformanceTesting/heatmap.png)
