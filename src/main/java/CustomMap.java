@@ -201,8 +201,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public boolean containsKey(final Object key) {
         requireNonNull(key, "Key value must not be null.");
-        int index = hash(key);
-        for(Node<K, V> node = map[index]; node != null; node = node.next)
+        for(Node<K, V> node = map[hash(key)]; node != null; node = node.next)
             if(node.key.equals(key))
                 return true;
         return false;
@@ -234,7 +233,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public Set<Map.Entry<K, V>> entrySet() {
         Set<Map.Entry<K, V>> set = new java.util.HashSet<>();
-        for (Node<K, V> bucket : map) {
+        for (Node<K, V> bucket : map)
             for (Node<K, V> e = bucket; e != null; e = e.next) {
                 final Node<K, V> targetNode = e;
                 set.add(new AbstractMap.SimpleEntry<>(targetNode.key, targetNode.value) {
@@ -246,7 +245,6 @@ public class CustomMap<K, V> implements Map<K, V> {
                     }
                 });
             }
-        }
         return set;
     }
 
@@ -579,8 +577,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(value, "Value must not be null.");
         validateKeyValuePair(key, value);
-        int index = hash(key);
-        for(Node<K, V> e = map[index]; e != null; e = e.next)
+        for(Node<K, V> e = map[hash(key)]; e != null; e = e.next)
             if (e.key.equals(key))
                 return e.setValue(value);
         return null;
@@ -604,8 +601,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(oldValue, "Old value must not be null.");
         requireNonNull(newValue, "New value must not be null.");
         validateKeyValuePair(key, newValue);
-        int index = hash(key);
-        for (Node<K, V> node = map[index]; node != null; node = node.next)
+        for (Node<K, V> node = map[hash(key)]; node != null; node = node.next)
             if (node.key.equals(key) && Objects.equals(node.value, oldValue)) {
                 node.value = newValue;
                 return true;
@@ -740,19 +736,16 @@ public class CustomMap<K, V> implements Map<K, V> {
             return;
         int target = (int)(size / LOAD_FACTOR) + 1;
         int newIndex = 0;
-        for (int i = 0; i < primes.length; i++) {
+        for (int i = primesIndex; i >= 0; i--) {
             if (primes[i] >= target)
                 break;
             newIndex = i;
         }
-        if (newIndex == primesIndex)
-            return;
-        int newCapacity = primes[newIndex];
-        Node<K, V>[] newMap = new Node[newCapacity];
-        transfer(map, newMap, newCapacity);
-        this.map = newMap;
-        this.mapSize = newCapacity;
         this.primesIndex = newIndex;
+        Node<K, V>[] newMap = new Node[primes[primesIndex]];
+        transfer(map, newMap, primes[primesIndex]);
+        this.map = newMap;
+        this.mapSize = primes[primesIndex];
     }
 
     /**
@@ -787,16 +780,14 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     private void transfer(Node<K, V>[] oldMap, Node<K, V>[] newMap, int newCapacity) {
         for (Node<K, V> head : oldMap) {
-            Node<K, V> current = head;
-            while (current != null) {
-                Node<K, V> nextNode = current.next;
-                int h = current.key.hashCode();
+            while (head != null) {
+                Node<K, V> nextNode = head.next;
+                int h = head.key.hashCode();
                 h = (h ^ (h >>> 20) ^ (h >>> 12)) & 0x7FFFFFFF;
                 int index = h % newCapacity;
-                current.next = newMap[index];
-                newMap[index] = current;
-
-                current = nextNode;
+                head.next = newMap[index];
+                newMap[index] = head;
+                head = nextNode;
             }
         }
     }
@@ -861,7 +852,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         private Node<K, V> nextNode = null;
         private Node<K, V> lastReturned = null;
 
-        KeyIterator() {
+        private KeyIterator() {
             advanceToNextNode();
         }
 
