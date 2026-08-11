@@ -25,10 +25,9 @@ tasks.named('test', Test) {
     }
 }
 
-// ==================== JaCoCo Configuration ====================
 
 jacoco {
-    toolVersion = '0.8.12'           // Latest stable version
+    toolVersion = '0.8.12'
 }
 
 jacocoTestReport {
@@ -40,7 +39,6 @@ jacocoTestReport {
         csv.required = false
     }
 
-    // Optional: Exclude generated or test classes if needed
     afterEvaluate {
         classDirectories.setFrom(
                 files(classDirectories.files.collect {
@@ -63,7 +61,6 @@ jacocoTestCoverageVerification {
     }
 }
 
-// Make build task run coverage report
 tasks.named('build') {
     dependsOn jacocoTestReport
 }
