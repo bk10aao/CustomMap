@@ -10,9 +10,20 @@ repositories {
     mavenCentral()
 }
 
+sourceSets {
+    jmh {
+        java.srcDirs = ['src/jmh/java']
+        resources.srcDirs = ['src/jmh/resources']
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+
 dependencies {
     implementation 'org.springframework:spring-core:6.2.11'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    jmhImplementation 'org.openjdk.jmh:jmh-core:1.37'
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 }
 
 tasks.named('test', Test) {
@@ -25,6 +36,11 @@ tasks.named('test', Test) {
     }
 }
 
+task jmh(type: JavaExec, dependsOn: 'jmhClasses') {
+    mainClass = 'org.openjdk.jmh.Main'
+    classpath = sourceSets.jmh.runtimeClasspath
+    args 'custommap.CustomMapPerformanceBenchmark'
+}
 
 jacoco {
     toolVersion = '0.8.12'
@@ -43,7 +59,7 @@ jacocoTestReport {
         classDirectories.setFrom(
                 files(classDirectories.files.collect {
                     fileTree(dir: it,
-                            exclude: ['**/*Test.class', '**/*IT.class'])
+                            exclude: ['**/*Test.class', '**/*IT.class', '**/*PerformanceTest.class', '**/*PerformanceBenchmark.class'])
                 })
         )
     }

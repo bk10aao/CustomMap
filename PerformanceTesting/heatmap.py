@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# 1. Load the benchmark data files
-custom_map_df = pd.read_csv('CustomMap_performance.csv', sep=';')
-hash_map_df = pd.read_csv('HashMap_performance.csv', sep=';')
+# 1. Load the benchmark data files with correct filenames
+custom_map_df = pd.read_csv('CustomMap_jmh_performance.csv', sep=';')
+hash_map_df = pd.read_csv('HashMap_jmh_performance.csv', sep=';')
 
 # 2. Extract methods and sizes
 methods = [col for col in custom_map_df.columns if col != 'Size']
@@ -52,7 +52,6 @@ fig, ax = plt.subplots(figsize=(15, 13), facecolor='none')
 ax.set_facecolor('none')
 
 # 6. Clip the log2 ratios to [-4.0, 4.0] (maps color range bounds to 16x variation)
-# This prevents extreme outliers from washing out minor parity differences
 clipped_heatmap_data = np.clip(heatmap_data, -4.0, 4.0)
 
 # 7. Create a custom divergent colormap (Red = HashMap Faster, Blue = CustomMap Faster)
@@ -67,28 +66,31 @@ sns.heatmap(clipped_heatmap_data,
             xticklabels=sizes,
             yticklabels=sorted_methods,
             ax=ax,
-            cbar_kws={'label': '← JDK Faster (HashMap)  |  Relative Speedup Scale (Clipped at 16x)  |  Custom Faster (CustomMap) →'},
+            cbar_kws={'label': '← JDK Faster  |  Relative Speedup Scale (Clipped at 16x)  |  Custom Faster →'},
             linewidths=0.8,
             linecolor='#555555',
-            annot_kws={'size': 10, 'weight': 'bold'})
+            annot_kws={'size': 10, 'weight': 'bold', 'color': '#ffffff'})
 
 # 9. Format Title, Labels, and Colorbar styling to match transparency guidelines
-ax.set_title('Java Map Performance Speedup Matrix Heatmap Across Sizes\n(Positive = CustomMap Faster, Negative = HashMap Faster)',
+ax.set_title('Java Map Performance Speedup Matrix Heatmap Across Sizes\n(Positive = CustomMap Faster, Negative = JDK Faster)',
              color='#ffffff', fontsize=16, fontweight='bold', pad=20)
 ax.set_ylabel('Map Interface Methods', color='#aaaaaa', fontsize=13, labelpad=10)
 ax.set_xlabel('Collection Size (Elements)', color='#aaaaaa', fontsize=13, labelpad=10)
 
 ax.tick_params(colors='#ffffff', labelsize=11)
-plt.xticks(rotation=45)
-plt.yticks(rotation=0)
+plt.xticks(rotation=45, color='#ffffff')
+plt.yticks(rotation=0, color='#ffffff')
 
-# Style colorbar text to match dark/transparent setups
+# Style colorbar text and outline to match dark/transparent setups
 cbar = ax.collections[0].colorbar
 cbar.ax.tick_params(colors='#ffffff', labelsize=10)
 cbar.ax.yaxis.label.set_color('#ffffff')
 cbar.ax.yaxis.label.set_fontsize(12)
+cbar.outline.set_edgecolor('#555555')
+for text in cbar.ax.yaxis.get_ticklabels():
+    text.set_color('#ffffff')
 
 # 10. Compute tight layouts and save the file
 plt.tight_layout()
-plt.savefig('map_performance_heatmap_transparent.png', dpi=300, transparent=True)
+plt.savefig('map_performance_heatmap_transparent.png', dpi=300, transparent=True, facecolor='none', edgecolor='none')
 plt.close()
