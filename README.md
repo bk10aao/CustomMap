@@ -6,7 +6,6 @@ All methods implemented are identical to those found in the Java [Map](https://d
 ## Build and Test
 
 1. To build and test the project run command `./gradlew clean build`
-2. To test the project run command `gradle test --tests CustomMapTest`
 
 ## Time Complexity
 
