@@ -169,7 +169,7 @@ def create_chart(csv_col, operation_label, custommap_data, hashmap_data,
 
     legend_elements = [
         Line2D([0], [0], marker='o', color='none', markerfacecolor=COLORS['purple'], markeredgecolor=COLORS['purple'],
-               markeredgewidth=1.5, markersize=8, label='CustomMap', linestyle='none'),
+               markeredgewidth=1.5, markersize=8, label='Custom', linestyle='none'),
         Line2D([0], [0], marker='o', color='none', markerfacecolor=COLORS['blue'], markeredgecolor=COLORS['blue'],
                markeredgewidth=1.5, markersize=8, label='JDK', linestyle='none'),
     ]
