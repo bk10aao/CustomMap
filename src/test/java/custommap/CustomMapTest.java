@@ -4,6 +4,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +24,7 @@ class CustomMapTest {
 
     @Test
     public void createEmptyMap_returnsMapOfSize_0() {
-        CustomMap<String, String> map = new CustomMap<>();
-        assertEquals(0, map.size());
+        assertEquals(0, new CustomMap<>().size());
     }
 
     @Test
@@ -353,37 +353,12 @@ class CustomMapTest {
     }
 
     @Test
-    public void createTwoMaps_withDiffentSizss_returns_false() {
+    public void createTwoMaps_withDifferentSizes_returns_false() {
         CustomMap<String, Integer> map = new CustomMap<>();
         for(int i = 0; i < 5; i++) map.put(String.valueOf(i), i * 10);
         CustomMap<String, Integer> mapTwo = new CustomMap<>();
         for(int i = 0; i < 10; i++) mapTwo.put(String.valueOf(i), i * 100);
         assertNotEquals(map, mapTwo);
-    }
-
-    @Test
-    public void onAdding_13Items_withLoadFactorOf_point_75_returns_MapSizeOf_23_andCorrectlyRehashedValues() {
-        CustomMap<Integer, Integer> map = new CustomMap<>();
-        assertEquals(17, map.getMapSize());
-        for (int i = 0; i < 13; i++) map.put(i, i * 10);
-        assertEquals(23, map.getMapSize());
-        for(int i = 0; i < 7; i++) assertEquals(i * 10, map.get(i));
-    }
-
-    @Test
-    public void onAdding_13Items_withLoadFactorOf_point_75_returns_MapSizeOf_23_andOnReducingMapToSizeOf_5_reducesMapSizeTo_17() {
-        CustomMap<Integer, Integer> map = new CustomMap<>();
-        assertEquals(17, map.getMapSize());
-        for(int i = 1; i < 14; i++) map.put(i, i * 10);
-        assertEquals(23, map.getMapSize());
-        assertEquals(13, map.size());
-
-        for(int i = 1; i < 9; i++) map.remove(i);
-
-        assertEquals(5, map.size());
-        assertEquals(17, map.getMapSize());
-
-        for(int i = 10; i < 14; i++) assertEquals(i * 10, map.get(i));
     }
 
     @Test
@@ -695,9 +670,9 @@ class CustomMapTest {
     }
 
     @Test
-    public void givenMap_onReplaceAllWithNullFunction_throwsIllegalArgumentException() {
+    public void givenMap_onReplaceAllWithNullFunction_throwsNullPointerException() {
         CustomMap<String, Integer> map = new CustomMap<>();
-        assertThrows(IllegalArgumentException.class, () -> map.replaceAll(null));
+        assertThrows(NullPointerException.class, () -> map.replaceAll(null));
     }
 
     @Test
@@ -881,5 +856,180 @@ class CustomMapTest {
         int h3 = map.hashCode();
         assertEquals(h1, h2);
         assertEquals(h2, h3);
+    }
+
+    @Test
+    void testCopyConstructorWithStandardMap() {
+        Map<String, Integer> source = new CustomMap<>();
+        source.put("One", 1);
+        source.put("Two", 2);
+        source.put("Three", 3);
+
+        CustomMap<String, Integer> customMap = new CustomMap<>(source);
+
+        assertEquals(3, customMap.size());
+        assertEquals(1, customMap.get("One"));
+        assertEquals(2, customMap.get("Two"));
+        assertEquals(3, customMap.get("Three"));
+    }
+
+    @Test
+    void testCopyConstructorWithEmptyMap() {
+        Map<String, Integer> source = new CustomMap<>();
+
+        CustomMap<String, Integer> customMap = new CustomMap<>(source);
+
+        assertTrue(customMap.isEmpty());
+        assertEquals(0, customMap.size());
+    }
+
+    @Test
+    void testCopyConstructorWithNullKeyThrowsException() {
+        Map<String, Integer> source = new HashMap<>();
+        source.put(null, 1);
+        assertThrows(NullPointerException.class, () -> new CustomMap<>(source));
+    }
+
+    @Test
+    void testCopyConstructorResizesCorrectly() {
+        Map<Integer, String> source = new CustomMap<>();
+        for (int i = 0; i < 50; i++)
+            source.put(i, "Value_" + i);
+        CustomMap<Integer, String> customMap = new CustomMap<>(source);
+        assertEquals(50, customMap.size());
+        for (int i = 0; i < 50; i++)
+            assertEquals("Value_" + i, customMap.get(i));
+    }
+
+    @Test
+    void testMergeKeyNotPresent() {
+        CustomMap<String, Integer> map = new CustomMap<>();
+        Integer result = map.merge("apple", 10, (oldVal, newVal) -> oldVal + newVal);
+
+        assertEquals(10, result);
+        assertEquals(10, map.get("apple"));
+        assertEquals(1, map.size());
+    }
+
+    @Test
+    void testMergeKeyPresent() {
+        CustomMap<String, Integer> map = new CustomMap<>();
+        map.put("apple", 10);
+
+        Integer result = map.merge("apple", 5, (oldVal, newVal) -> oldVal + newVal);
+
+        assertEquals(15, result);
+        assertEquals(15, map.get("apple"));
+        assertEquals(1, map.size());
+    }
+
+    @Test
+    void testMergeResultsInNullRemoval() {
+        CustomMap<String, Integer> map = new CustomMap<>();
+        map.put("apple", 10);
+
+        Integer result = map.merge("apple", 5, (oldVal, newVal) -> null);
+
+        assertNull(result);
+        assertNull(map.get("apple"));
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    void testMergeThrowsNullPointerExceptionForNullKey() {
+        CustomMap<String, Integer> map = new CustomMap<>();
+        assertThrows(NullPointerException.class, () ->
+                map.merge(null, 10, (oldVal, newVal) -> oldVal + newVal)
+        );
+    }
+
+    @Test
+    void testMergeThrowsNullPointerExceptionForNullValue() {
+        CustomMap<String, Integer> map = new CustomMap<>();
+        assertThrows(NullPointerException.class, () ->
+                map.merge("apple", null, (oldVal, newVal) -> oldVal + newVal)
+        );
+    }
+
+    @Test
+    void testMergeThrowsNullPointerExceptionForNullFunction() {
+        CustomMap<String, Integer> map = new CustomMap<>();
+        assertThrows(NullPointerException.class, () ->
+                map.merge("apple", 10, null)
+        );
+    }
+
+
+    @Test
+    void testPutAllTriggersSingleExpansion() {
+        CustomMap<Integer, String> customMap = new CustomMap<>();
+
+        Map<Integer, String> source = new HashMap<>();
+        for (int i = 0; i < 10; i++) {
+            source.put(i, "Value_" + i);
+        }
+        customMap.putAll(source);
+        assertEquals(10, customMap.size());
+
+        Map<Integer, String> bulkSource = new HashMap<>();
+        for (int i = 10; i < 20; i++) {
+            bulkSource.put(i, "Value_" + i);
+        }
+
+        customMap.putAll(bulkSource);
+
+        assertEquals(20, customMap.size());
+        for (int i = 0; i < 20; i++) {
+            assertEquals("Value_" + i, customMap.get(i));
+        }
+    }
+
+    @Test
+    void testPutAllTriggersMultiStepExpansion() {
+        CustomMap<Integer, String> customMap = new CustomMap<>();
+
+        Map<Integer, String> massiveSource = new HashMap<>();
+        for (int i = 0; i < 100; i++) {
+            massiveSource.put(i, "Bulk_" + i);
+        }
+
+        customMap.putAll(massiveSource);
+
+        assertEquals(100, customMap.size());
+        for (int i = 0; i < 100; i++) {
+            assertEquals("Bulk_" + i, customMap.get(i));
+        }
+    }
+
+    @Test
+    void testConstructorThrowsExceptionForNegativeCapacity() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new CustomMap<>(-1)
+        );
+        assertTrue(exception.getMessage().contains("Initial capacity must not be negative"));
+    }
+
+    @Test
+    void testConstructorCapsAtMaximumCapacity() {
+        int oversizedCapacity = (1 << 30) + 500;
+        CustomMap<Integer, String> map = new CustomMap<>(oversizedCapacity);
+        assertNotNull(map);
+    }
+
+    @Test
+    void testPutAllCapacityExpansionTrigger() {
+        CustomMap<Integer, String> customMap = new CustomMap<>();
+        Map<Integer, String> sourceMap = new HashMap<>();
+        for (int i = 0; i < 15; i++) {
+            sourceMap.put(i, "TestValue_" + i);
+        }
+
+        customMap.putAll(sourceMap);
+
+        assertEquals(15, customMap.size());
+        for (int i = 0; i < 15; i++) {
+            assertEquals("TestValue_" + i, customMap.get(i));
+        }
     }
 }

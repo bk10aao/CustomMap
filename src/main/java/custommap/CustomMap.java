@@ -1,7 +1,10 @@
 package custommap;
 
-import java.util.AbstractMap;
+import java.util.AbstractCollection;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -10,14 +13,13 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
-import static org.springframework.util.Assert.notNull;
 
 /**
  * A hash table-based implementation of the {@link Map} interface, using an array
  * to handle collisions via chaining. This map does not permit null keys and enforces type constraints
  * on keys and values using the provided {@code Class<K>} and {@code Class<V>}. Null values are permitted
  * in some operations (e.g., {@code put}) but not others (e.g., {@code replace}). The map resizes
- * automatically based on a load factor of 0.75, using a predefined sequence of prime numbers for bucket sizes.
+ * automatically based on a load factor of 0.75, using power-of-two capacity sizing and bitwise masking.
  * <p>
  * This implementation is not synchronized and does not guarantee detection of concurrent modifications.
  * Methods like {@code compute} and {@code forEach} may produce undefined behavior if the map is modified
@@ -34,37 +36,67 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     private Node<K, V>[] map;
 
-    private int mapSize = primes[0];
+    private int mapSize;
     private int size = 0;
     private static final double LOAD_FACTOR = 0.75f;
-    private int primesIndex = 0;
+    private static final int MAXIMUM_CAPACITY = 1 << 30;
 
     /**
-     * Constructs an empty {@code CustomMap} with the specified key and value types and an initial
-     * capacity of 17 buckets. The map uses a hash table with chaining (via a linked Node structure) to handle
-     * collisions and resizes when the load factor (0.75) is exceeded.
-     *
-     * @throws IllegalArgumentException if the key or value class is null
+     * Constructs an empty {@code CustomMap} with an initial capacity of 16 buckets.
      */
     public CustomMap() {
-        this.map = new Node[primes[0]];
+        this(16);
+    }
+
+    /**
+     * Constructs an empty {@code CustomMap} with the specified initial capacity.
+     * The capacity is automatically rounded up to the nearest power of two.
+     *
+     * @param initialCapacity the initial capacity
+     * @throws IllegalArgumentException if the initial capacity is negative
+     */
+    public CustomMap(int initialCapacity) {
+        if (initialCapacity < 0)
+            throw new IllegalArgumentException("Initial capacity must not be negative: " + initialCapacity);
+        if (initialCapacity > MAXIMUM_CAPACITY)
+            initialCapacity = MAXIMUM_CAPACITY;
+        int capacity = 1;
+        while (capacity < initialCapacity && capacity < MAXIMUM_CAPACITY)
+            capacity <<= 1;
+        if (capacity > MAXIMUM_CAPACITY)
+            capacity = MAXIMUM_CAPACITY;
+        this.mapSize = capacity;
+        this.map = new Node[Math.min(capacity, 1 << 24)];
+    }
+
+    /**
+     * Constructs a new {@code CustomMap} with the same mappings as the specified map.
+     *
+     * @param m the map whose mappings are to be placed in this map
+     */
+    public CustomMap(final Map<? extends K, ? extends V> m) {
+        this((int) ((m.size() / LOAD_FACTOR) + 1));
+        putAll(m);
     }
 
     /**
      * Removes all mappings from this map (optional operation). The map will be empty after this call,
-     * with its internal array reset to the initial capacity (17 buckets).
+     * with its internal array reset to the initial capacity (16 buckets).
      *
      * @implSpec
-     * This implementation creates a new array of size equal to the smallest prime (17), resets the size to 0,
-     * and updates the prime index to 0.
-
+     * This implementation creates a new array of size equal to the initial capacity (16), and resets the size to 0.
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public void clear() {
-        this.primesIndex = 0;
-        this.map = (Node<K, V>[]) new Node[primes[primesIndex]];
-        this.mapSize = primes[primesIndex];
-        this.size = 0;
+        Node<K, V>[] tab = map;
+        if (tab != null && size > 0) {
+            size = 0;
+            Arrays.fill(tab, null);
+        }
+        if (mapSize > 16) {
+            this.map = (Node<K, V>[]) new Node[16];
+            this.mapSize = 16;
+        }
     }
 
     /**
@@ -86,14 +118,31 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V compute(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(remappingFunction, "Remapping function must not be null.");
-        V oldValue = get(key);
-        V newValue = remappingFunction.apply(key, oldValue);
+        Node<K, V>[] tab = map;
+        int hash = hash(key);
+        int index = hash & (tab.length - 1);
+        Node<K, V> previous = null;
+        Node<K, V> current = tab[index];
+        while (current != null) {
+            if (current.key.equals(key))
+                break;
+            previous = current;
+            current = current.next;
+        }
+        V newValue = remappingFunction.apply(key, (current == null) ? null : current.value);
         if (newValue == null) {
-            if (oldValue != null)
-                remove(key);
+            if (current != null)
+                remove(previous, index, current);
             return null;
         }
-        put(key, newValue);
+        if (current != null)
+            current.value = newValue;
+        else {
+            map[index] = new Node<>(hash, key, newValue, tab[index]);
+            size++;
+            if (size > (mapSize - (mapSize >>> 2)))
+                expand();
+        }
         return newValue;
     }
 
@@ -101,7 +150,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * If the specified key is not already associated with a value, computes a new value using the
      * given mapping function and associates it with the key. If the function returns {@code null},
      * no mapping is created. The map may resize if the load factor (0.75) is exceeded or shrink if
-     * the size falls below one-quarter of the current capacity and the capacity exceeds 17.
+     * the size falls below one-quarter of the current capacity and the capacity exceeds 16.
      *
      * @param key the key whose value is to be computed if absent
      * @param mappingFunction the function to compute a value
@@ -113,14 +162,19 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V computeIfAbsent(final K key, final Function<? super K, ? extends V> mappingFunction) {
         requireNonNull(key, "Key must not be null.");
         requireNonNull(mappingFunction, "Mapping function must not be null.");
+        Node<K, V>[] tab = map;
         int hash = hash(key);
-        int index = hash % mapSize;
-        for (Node<K, V> e = map[index]; e != null; e = e.next)
+        int index = hash & (tab.length - 1);
+        for (Node<K, V> e = tab[index]; e != null; e = e.next)
             if (e.key.equals(key))
                 return e.value;
         V newValue = mappingFunction.apply(key);
-        if (newValue != null)
-            put(key, newValue);
+        if (newValue != null) {
+            tab[index] = new Node<>(hash, key, newValue, tab[index]);
+            size++;
+            if (size > (mapSize - (mapSize >>> 2)))
+                expand();
+        }
         return newValue;
     }
 
@@ -138,9 +192,9 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V computeIfPresent(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(remappingFunction, "Remapping function must not be null.");
-        int hash = hash(key);
-        int index = hash % mapSize;
-        Node<K, V> current = map[index];
+        Node<K, V>[] tab = map;
+        int index = hash(key) & (tab.length - 1);
+        Node<K, V> current = tab[index];
         Node<K, V> previous = null;
         while (current != null) {
             if (current.key.equals(key)) {
@@ -170,9 +224,10 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public boolean containsKey(final Object key) {
         requireNonNull(key, "Key value must not be null.");
-        int index = hash(key) % mapSize;
-        for(Node<K, V> node = map[index]; node != null; node = node.next)
-            if(node.key.equals(key))
+        Node<K, V>[] tab = map;
+        int index = hash(key) & (tab.length - 1);
+        for (Node<K, V> node = tab[index]; node != null; node = node.next)
+            if (node.key.equals(key))
                 return true;
         return false;
     }
@@ -186,8 +241,9 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @return {@code true} if this map maps one or more keys to the specified value
      */
     public boolean containsValue(final Object value) {
-        for(Node<K, V> entry : map)
-            for(Node<K, V> node = entry; node != null; node = node.next)
+        Node<K, V>[] tab = map;
+        for (int i = 0; i < tab.length; i++)
+            for (Node<K, V> node = tab[i]; node != null; node = node.next)
                 if (Objects.equals(node.value, value))
                     return true;
         return false;
@@ -197,7 +253,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * Returns a new {@link Set} containing all key-value mappings in this map. The set contains
      * {@link java.util.Map.Entry} objects and is not backed by the map, so changes to the set do not
      * affect the map, and vice versa.
-     * The set contains {@link java.util.AbstractMap.SimpleEntry} objects
+     * The set contains {@link SimpleEntry} objects
      *
      * @return a new set containing all key-value mappings in this map
      */
@@ -221,7 +277,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @see #hashCode()
      * @see Objects#equals(Object, Object)
      */
-    @Override
     public boolean equals(final Object o) {
         if (this == o)
             return true;
@@ -229,7 +284,8 @@ public class CustomMap<K, V> implements Map<K, V> {
             return false;
         if (size() != otherMap.size())
             return false;
-        for (Node<K, V> head : map)
+        Node<K, V>[] tab = map;
+        for (Node<K, V> head : tab) {
             for (Node<K, V> node = head; node != null; node = node.next) {
                 K key = node.key;
                 V value = node.value;
@@ -244,6 +300,7 @@ public class CustomMap<K, V> implements Map<K, V> {
                     return false;
                 }
             }
+        }
         return true;
     }
 
@@ -257,7 +314,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public void forEach(final BiConsumer<? super K, ? super V> action) {
         requireNonNull(action, "BiConsumer must not be null.");
-        for (Node<K, V> node : map)
+        Node<K, V>[] tab = map;
+        for (Node<K, V> node : tab)
             for (Node<K, V> n = node; n != null; n = n.next)
                 action.accept(n.key, n.value);
     }
@@ -294,9 +352,10 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public V getOrDefault(final Object key, final V defaultValue) {
         requireNonNull(key, "Key value must not be null.");
-        int index = hash(key) % mapSize;
-        for (Node<K, V> entry = map[index]; entry != null; entry = entry.next)
-            if(entry.key.equals(key))
+        Node<K, V>[] tab = map;
+        int index = hash(key) & (tab.length - 1);
+        for (Node<K, V> entry = tab[index]; entry != null; entry = entry.next)
+            if (entry.key.equals(key))
                 return entry.value;
         return defaultValue;
     }
@@ -316,7 +375,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public int hashCode() {
         int result = 0;
-        for (Node<K, V> node : map)
+        Node<K, V>[] tab = map;
+        for (Node<K, V> node : tab)
             for (Node<K, V> e = node; e != null; e = e.next)
                 result += Objects.hashCode(e.key) ^ Objects.hashCode(e.value);
         return result;
@@ -346,7 +406,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * Otherwise, replaces the current value with the result of applying the remapping function to
      * the current value and the given value (optional operation). If the remapping function returns
      * {@code null}, the mapping is removed. The map may resize if the load factor (0.75) is exceeded
-     * or shrink if the size falls below one-quarter of the current capacity and the capacity exceeds 17.
+     * or shrink if the size falls below one-quarter of the current capacity and the capacity exceeds 16.
      *
      * <p>The remapping function should not modify this map during computation, as this may lead to
      * undefined behavior since this implementation does not detect concurrent modifications.
@@ -364,15 +424,32 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(value, "Value must not be null.");
         requireNonNull(remappingFunction, "Remapping BiFunction must not be null.");
-        V previous = get(key);
-        if (previous == null)
-            return put(key, value);
-        V newValue = remappingFunction.apply(previous, value);
+        Node<K, V>[] tab = map;
+        int hash = hash(key);
+        int index = hash & (tab.length - 1);
+        Node<K, V> previous = null;
+        Node<K, V> current = tab[index];
+        while (current != null) {
+            if (current.key.equals(key))
+                break;
+            previous = current;
+            current = current.next;
+        }
+        if (current == null) {
+            tab[index] = new Node<>(hash, key, value, tab[index]);
+            size++;
+            if (size > (mapSize - (mapSize >>> 2)))
+                expand();
+            return value;
+        }
+
+        V newValue = remappingFunction.apply(current.value, value);
         if (newValue == null) {
-            remove(key);
+            remove(previous, index, current);
             return null;
         }
-        return put(key, newValue);
+        current.value = newValue;
+        return newValue;
     }
 
     /**
@@ -388,14 +465,15 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public V put(final K key, final V value) {
         requireNonNull(key, "Key value must not be null.");
+        Node<K, V>[] tab = map;
         int hash = hash(key);
-        int index = hash % mapSize;
-        for (Node<K, V> e = map[index]; e != null; e = e.next)
+        int index = hash & (tab.length - 1);
+        for (Node<K, V> e = tab[index]; e != null; e = e.next)
             if (e.key.equals(key))
                 return e.setValue(value);
-        map[index] = new Node<>(hash, key, value, map[index]);
+        tab[index] = new Node<>(hash, key, value, tab[index]);
         size++;
-        if ((double) size / mapSize > LOAD_FACTOR)
+        if (size > (mapSize - (mapSize >>> 2)))
             expand();
         return null;
     }
@@ -413,33 +491,39 @@ public class CustomMap<K, V> implements Map<K, V> {
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public void putAll(final Map<? extends K, ? extends V> m) {
-        requireNonNull(m, "Map value must not be null");
-        int targetSize = size + m.size();
-        while ((double) targetSize / mapSize > LOAD_FACTOR && primesIndex + 1 < primes.length) {
-            primesIndex++;
-            mapSize = primes[primesIndex];
+        int mSize = m.size();
+        if (mSize == 0)
+            return;
+        for (Map.Entry<? extends K, ? extends V> entry : m.entrySet())
+            requireNonNull(entry.getKey(), "Key value must not be null.");
+        int targetSize = size + mSize;
+        if (targetSize > (mapSize - (mapSize >>> 2))) {
+            int targetCapacity = mapSize;
+            while (targetSize > (targetCapacity - (targetCapacity >>> 2)) && targetCapacity < MAXIMUM_CAPACITY)
+                targetCapacity <<= 1;
+            if (targetCapacity > mapSize) {
+                mapSize = targetCapacity;
+                Node<K, V>[] newMap = new Node[mapSize];
+                transfer(this.map, newMap, mapSize);
+                this.map = newMap;
+            }
         }
-        if (mapSize != map.length) {
-            Node<K, V>[] newMap = new Node[mapSize];
-            transfer(this.map, newMap, mapSize);
-            this.map = newMap;
-        }
+        Node<K, V>[] tab = map;
+        int mask = mapSize - 1;
         for (Map.Entry<? extends K, ? extends V> entry : m.entrySet()) {
             K key = entry.getKey();
             V value = entry.getValue();
-            requireNonNull(key, "Key value must not be null.");
             int hash = hash(key);
-            int index = hash % mapSize;
+            int index = hash & mask;
             boolean updated = false;
-            for (Node<K, V> e = map[index]; e != null; e = e.next)
+            for (Node<K, V> e = tab[index]; e != null; e = e.next)
                 if (e.key.equals(key)) {
                     e.setValue(value);
                     updated = true;
                     break;
                 }
-
             if (!updated) {
-                map[index] = new Node<>(hash, key, value, map[index]);
+                tab[index] = new Node<>(hash, key, value, tab[index]);
                 size++;
             }
         }
@@ -461,14 +545,15 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V putIfAbsent(final K key, final V value) {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(value, "Value must not be null.");
+        Node<K, V>[] tab = map;
         int hash = hash(key);
-        int index = hash % mapSize;
-        for (Node<K, V> e = map[index]; e != null; e = e.next)
+        int index = hash & (tab.length - 1);
+        for (Node<K, V> e = tab[index]; e != null; e = e.next)
             if (e.key.equals(key))
                 return e.value;
-        map[index] = new Node<>(hash, key, value, map[index]);
+        tab[index] = new Node<>(hash, key, value, tab[index]);
         size++;
-        if ((double) size / mapSize > LOAD_FACTOR)
+        if (size > (mapSize - (mapSize >>> 2)))
             expand();
         return null;
     }
@@ -476,7 +561,7 @@ public class CustomMap<K, V> implements Map<K, V> {
     /**
      * Removes the mapping for the specified key from this map if present (optional operation). More formally,
      * removes the mapping for a key {@code k} such that {@code Objects.equals(key, k)}. The map may shrink
-     * if the size falls below one-quarter of the current capacity and the capacity exceeds 17.
+     * if the size falls below one-quarter of the current capacity and the capacity exceeds 16.
      *
      * @param key the key whose mapping is to be removed
      * @return the previous value associated with the key, or {@code null} if none
@@ -486,11 +571,12 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public V remove(final Object key) {
         requireNonNull(key, "Key value must not be null.");
-        int index = hash(key) % mapSize;
-        Node<K, V> current = map[index];
+        Node<K, V>[] tab = map;
+        int index = hash(key) & (tab.length - 1);
+        Node<K, V> current = tab[index];
         Node<K, V> previous = null;
-        while(current != null) {
-            if(current.key.equals(key)) {
+        while (current != null) {
+            if (current.key.equals(key)) {
                 V oldValue = current.value;
                 remove(previous, index, current);
                 return oldValue;
@@ -507,7 +593,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * {@code Objects.equals(key, k)} and {@code Objects.equals(value, v)}, where {@code v} is the
      * value currently mapped to {@code k}. Returns {@code true} if the mapping was removed.
      * The map may shrink if the size falls below one-quarter of the current capacity and the capacity
-     * exceeds 17.
+     * exceeds 16.
      *
      * @param key the key whose mapping is to be removed
      * @param value the value expected to be associated with the key
@@ -519,11 +605,12 @@ public class CustomMap<K, V> implements Map<K, V> {
     public boolean remove(final Object key, final Object value) {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(value, "Value must not be null.");
-        int index = hash(key) % mapSize;
+        Node<K, V>[] tab = map;
+        int index = hash(key) & (tab.length - 1);
         Node<K, V> previous = null;
-        Node<K, V> current = map[index];
-        while(current != null) {
-            if(current.key.equals(key) && Objects.equals(current.value, value))
+        Node<K, V> current = tab[index];
+        while (current != null) {
+            if (current.key.equals(key) && Objects.equals(current.value, value))
                 return remove(previous, index, current);
             previous = current;
             current = current.next;
@@ -546,8 +633,9 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V replace(final K key, final V value) {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(value, "Value must not be null.");
-        int index = hash(key) % mapSize;
-        for(Node<K, V> e = map[index]; e != null; e = e.next)
+        Node<K, V>[] tab = map;
+        int index = hash(key) & (tab.length - 1);
+        for (Node<K, V> e = tab[index]; e != null; e = e.next)
             if (e.key.equals(key))
                 return e.setValue(value);
         return null;
@@ -569,8 +657,9 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(oldValue, "Old value must not be null.");
         requireNonNull(newValue, "New value must not be null.");
-        int index = hash(key) % mapSize;
-        for (Node<K, V> node = map[index]; node != null; node = node.next)
+        Node<K, V>[] tab = map;
+        int index = hash(key) & (tab.length - 1);
+        for (Node<K, V> node = tab[index]; node != null; node = node.next)
             if (node.key.equals(key) && Objects.equals(node.value, oldValue)) {
                 node.value = newValue;
                 return true;
@@ -590,8 +679,9 @@ public class CustomMap<K, V> implements Map<K, V> {
      *         value type specified at construction
      */
     public void replaceAll(final BiFunction<? super K, ? super V, ? extends V> function) {
-        notNull(function, "BiFunction must not be null");
-        for (Node<K, V> node : map)
+        requireNonNull(function, "BiFunction must not be null.");
+        Node<K, V>[] tab = map;
+        for (Node<K, V> node : tab)
             for (Node<K, V> nodeInner = node; nodeInner != null; nodeInner = nodeInner.next)
                 nodeInner.value = function.apply(nodeInner.key, nodeInner.value);
     }
@@ -613,11 +703,12 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @return a string representation of this map
      */
     public String toString() {
-        if(size == 0)
+        if (size == 0)
             return "{}";
         StringBuilder stringBuilder = new StringBuilder("{");
         boolean first = true;
-        for(Node<K, V> entry : map)
+        Node<K, V>[] tab = map;
+        for (Node<K, V> entry : tab)
             for (Node<K, V> node = entry; node != null; node = node.next) {
                 if (!first)
                     stringBuilder.append(", ");
@@ -638,34 +729,16 @@ public class CustomMap<K, V> implements Map<K, V> {
         return new ValuesView();
     }
 
-    /**
-     * Expands the map's internal array to the next prime size in the predefined sequence when the load
-     * factor (0.75) is exceeded. All existing key-value mappings are rehashed into the new array.
-     *
-     * @implSpec
-     * This implementation creates a new {@code CustomMap} with the next prime size, reinserts all entries
-     * using {@code put}, and updates the internal array.
-     */
     private void expand() {
-        if (primesIndex + 1 >= primes.length)
+        Node<K, V>[] tab = map;
+        int oldCapacity = tab.length;
+        if (oldCapacity >= MAXIMUM_CAPACITY)
             return;
-        primesIndex++;
-        int newCapacity = primes[primesIndex];
+        int newCapacity = oldCapacity << 1;
         Node<K, V>[] newMap = new Node[newCapacity];
-        transfer(this.map, newMap, newCapacity);
+        transfer(tab, newMap, newCapacity);
         this.map = newMap;
         this.mapSize = newCapacity;
-
-    }
-
-    /**
-     * Returns the current number of buckets in the map's internal array, used for testing of internal
-     * resizing operations.
-     *
-     * @return the number of buckets in the map
-     */
-    public final int getMapSize() {
-        return this.mapSize;
     }
 
     /**
@@ -676,36 +749,25 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @return the computed bucket index
      * @throws NullPointerException if the key is null
      */
-    private int hash(final Object key) {
-        requireNonNull(key, "Key value must not be null.");
-        int h = key.hashCode();
-        return (h ^ (h >>> 20) ^ (h >>> 12)) & 0x7FFFFFFF;
+    private static int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
 
-    /**
-     * Reduces the map's internal array to a smaller prime size if the current size is less than or equal
-     * to one-quarter of the capacity and the capacity exceeds 17. All existing key-value mappings are
-     * rehashed into the new array.
-     *
-     * @implSpec
-     * This implementation creates a new {@code CustomMap} with a smaller prime size, reinserts all entries
-     * using {@code put}, and updates the internal array.
-     */
     private void reduce() {
-        if (mapSize <= primes[0] || size > mapSize / 4)
+        Node<K, V>[] tab = map;
+        if (mapSize <= 16 || size > mapSize / 4)
             return;
-        int target = (int)(size / LOAD_FACTOR) + 1;
-        int newIndex = 0;
-        for (int i = primesIndex; i >= 0; i--) {
-            if (primes[i] >= target)
-                break;
-            newIndex = i;
+        int newCapacity = mapSize >> 1;
+        if (newCapacity < 16) {
+            newCapacity = 16;
         }
-        this.primesIndex = newIndex;
-        Node<K, V>[] newMap = new Node[primes[primesIndex]];
-        transfer(map, newMap, primes[primesIndex]);
+        if (newCapacity >= mapSize)
+            return;
+        Node<K, V>[] newMap = new Node[newCapacity];
+        transfer(tab, newMap, newCapacity);
         this.map = newMap;
-        this.mapSize = primes[primesIndex];
+        this.mapSize = newCapacity;
     }
 
     /**
@@ -718,7 +780,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * </p>
      * <p>
      * Decrements the size counter and triggers resizing (down-sizing) if the
-     * load becomes sufficiently low (size ≤ mapSize/4 and mapSize > 17).
+     * load becomes sufficiently low (size ≤ mapSize/4 and mapSize > 16).
      * </p>
      *
      * @param previous the node before the one being removed, or {@code null}
@@ -727,25 +789,54 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param entry    the node to be removed
      * @return {@code true} (always, as this internal method assumes the entry exists)
      */
-    private boolean remove(Node<K, V> previous, int index, Node<K, V> entry) {
-        if(previous == null)
-            map[index] = entry.next;
+    private boolean remove(final Node<K, V> previous, final int index, final Node<K, V> entry) {
+        Node<K, V>[] tab = map;
+        if (previous == null)
+            tab[index] = entry.next;
         else
             previous.next = entry.next;
         size--;
-        if (mapSize > 17 && size <= mapSize / 4)
+        if (mapSize > 16 && size <= mapSize / 4)
             reduce();
         return true;
     }
 
     private void transfer(Node<K, V>[] oldMap, Node<K, V>[] newMap, int newCapacity) {
-        for (Node<K, V> head : oldMap) {
-            while (head != null) {
-                Node<K, V> nextNode = head.next;
-                int index = head.hash % newCapacity;
-                head.next = newMap[index];
-                newMap[index] = head;
-                head = nextNode;
+        int oldCapacity = oldMap.length;
+        boolean expanding = newCapacity > oldCapacity;
+        int testMask = expanding ? oldCapacity : newCapacity;
+        for (int i = 0; i < oldCapacity; ++i) {
+            Node<K, V> head = oldMap[i];
+            if (head != null) {
+                oldMap[i] = null;
+                Node<K, V> lowHead = null, lowTail = null;
+                Node<K, V> highHead = null, highTail = null;
+                Node<K, V> next;
+                do {
+                    next = head.next;
+                    if ((head.hash & testMask) == 0) {
+                        if (lowTail == null)
+                            lowHead = head;
+                        else
+                            lowTail.next = head;
+                        lowTail = head;
+                    } else {
+                        if (highTail == null)
+                            highHead = head;
+                        else
+                            highTail.next = head;
+                        highTail = head;
+                    }
+                    head = next;
+                } while (head != null);
+                if (lowTail != null) {
+                    lowTail.next = null;
+                    newMap[i] = lowHead;
+                }
+                if (highTail != null) {
+                    highTail.next = null;
+                    newMap[i + testMask] = highHead;
+                }
             }
         }
     }
@@ -821,7 +912,7 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     /**
      * A key-value pair representing a map entry, used internally to store mappings in the hash table.
-     * Implements {@link Map.Entry} implicitly through {@link AbstractMap.SimpleEntry} in {@code entrySet}.
+     * Implements {@link Map.Entry} implicitly through {@link SimpleEntry} in {@code entrySet}.
      */
     private static class Node<K, V> {
         final int hash;
@@ -871,12 +962,12 @@ public class CustomMap<K, V> implements Map<K, V> {
             return CustomMap.this.remove(entry.getKey(), entry.getValue());
         }
 
-        public java.util.Iterator<Map.Entry<K, V>> iterator() {
+        public Iterator<Map.Entry<K, V>> iterator() {
             return new EntryIterator();
         }
     }
 
-    private final class ValuesView extends java.util.AbstractCollection<V> {
+    private final class ValuesView extends AbstractCollection<V> {
         public int size() {
             return CustomMap.this.size();
         }
@@ -894,7 +985,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
     }
 
-    private final class EntryIterator implements java.util.Iterator<Map.Entry<K, V>> {
+    private final class EntryIterator implements Iterator<Map.Entry<K, V>> {
         private int bucketIndex = 0;
         private Node<K, V> nextNode = null;
         private Node<K, V> lastReturned = null;
@@ -929,7 +1020,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             Node<K, V> current = nextNode;
             advanceToNextNode();
 
-            return new AbstractMap.SimpleEntry<>(current.key, current.value) {
+            return new SimpleEntry<>(current.key, current.value) {
                 public V setValue(V value) {
                     return current.setValue(value);
                 }
@@ -988,13 +1079,4 @@ public class CustomMap<K, V> implements Map<K, V> {
             lastReturned = null;
         }
     }
-
-    /**
-     * Array of prime numbers used as bucket sizes for the map's internal array during resizing.
-     */
-    protected static final int[] primes = { 17, 23, 29, 37, 47, 59, 71, 89, 107, 131, 163, 197, 239, 293, 353, 431, 521, 631, 761, 919,
-            1103, 1327, 1597, 1931, 2333, 2801, 3371, 4049, 4861, 5839, 7013, 8419, 10103, 12143, 14591,
-            17519, 21023, 25229, 30293, 36353, 43627, 52361, 62851, 75431, 90523, 108631, 130363, 156437,
-            187751, 225307, 270371, 324449, 389357, 467237, 560689, 672827, 807403, 968897, 1162687, 1395263,
-            1674319, 2009191, 2411033, 2893249, 3471899, 4166287, 4999559, 5999471, 7199369 };
 }
