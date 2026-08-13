@@ -84,33 +84,33 @@ All methods implemented are identical to those found in the Java [Map](https://d
 
 # Performance vs Java HashMap
 
-| Method                           | Custom (ns) | JDK (ns)  |   Ratio    |            Winner            |
-|:---------------------------------|:------------|:----------|:----------:|:----------------------------:|
-| `clear()`                        | 73,914      | 74,345    |   ~1.01×   | **Statistically Equivalent** |
-| `compute(K,BiFunction)`          | 684         | 502       |   1.36×    |           **JDK**            |
-| `computeIfAbsent(K,Function)`    | 406         | 376       |   ~1.08×   | **Statistically Equivalent** |
-| `computeIfPresent(K,BiFunction)` | 762         | 1,050     |   1.38×    |          **Custom**          |
-| `constructor`                    | 164         | 92        |   1.79×    |           **JDK**            |
-| `containsKey(K)`                 | 300         | 415       |   1.38×    |          **Custom**          |
-| `containsValue(V)`               | 136,738     | 119,654   |   1.14×    |           **JDK**            |
-| `entrySet()`                     | 160         | 59        |   2.70×    |           **JDK**            |
-| `equals(Object o)`               | 2,375,475   | 2,635,382 |   ~1.11×   | **Statistically Equivalent** |
-| `forEach(BiConsumer)`            | 258,654     | 254,474   |   ~1.02×   | **Statistically Equivalent** |
-| `get(K)`                         | 357         | 335       |   ~1.07×   | **Statistically Equivalent** |
-| `getOrDefault(K,V)`              | 750         | 463       |   1.62×    |           **JDK**            |
-| `hashCode()`                     | 693,495     | 615,993   |   ~1.13×   | **Statistically Equivalent** |
-| `keySet()`                       | 124         | 84        |   1.47×    |           **JDK**            |
-| `merge(K,V,BiFunction)`          | 582         | 1,411     |   2.43×    |          **Custom**          |
-| `put(K,V)`                       | 4,318,986   | 4,469,980 |   ~1.03×   | **Statistically Equivalent** |
-| `putAll(Map)`                    | 1,059,655   | 1,000,072 |   ~1.06×   | **Statistically Equivalent** |
-| `putIfAbsent(K,V)`               | 4,925,956   | 3,887,748 |   1.27×    |           **JDK**            |
-| `remove(K)`                      | 400         | 336       |   1.19×    |           **JDK**            |
-| `remove(K,V)`                    | 417         | 472       |   ~1.13×   | **Statistically Equivalent** |
-| `replace(K,V)`                   | 435         | 445       |   ~1.02×   | **Statistically Equivalent** |
-| `replace(K,V,V)`                 | 913         | 826       |   ~1.11×   | **Statistically Equivalent** |
-| `replaceAll(BiFunction)`         | 1,150,468   | 1,213,617 |   ~1.05×   | **Statistically Equivalent** |
-| `toString()`                     | 3,437,562   | 1,995,256 |   1.72×    |           **JDK**            |
-| `values()`                       | 80          | 87        |   ~1.09×   | **Statistically Equivalent** |
+| Method                           | Custom (ns) | JDK (ns)  | Ratio  |            Winner            |
+|:---------------------------------|:------------|:----------|:------:|:----------------------------:|
+| `clear()`                        | 73,914      | 74,345    | ~1.01× | **Statistically Equivalent** |
+| `compute(K,BiFunction)`          | 684         | 502       | 1.36×  |           **JDK**            |
+| `computeIfAbsent(K,Function)`    | 406         | 376       | ~1.08× | **Statistically Equivalent** |
+| `computeIfPresent(K,BiFunction)` | 762         | 1,050     | 1.38×  |          **Custom**          |
+| `constructor`                    | 164         | 92        | 1.79×  |           **JDK**            |
+| `containsKey(K)`                 | 300         | 415       | 1.38×  |          **Custom**          |
+| `containsValue(V)`               | 136,738     | 119,654   | 1.14×  | **Statistically Equivalent** |
+| `entrySet()`                     | 160         | 59        | 2.70×  |           **JDK**            |
+| `equals(Object o)`               | 2,375,475   | 2,635,382 | ~1.11× | **Statistically Equivalent** |
+| `forEach(BiConsumer)`            | 258,654     | 254,474   | ~1.02× | **Statistically Equivalent** |
+| `get(K)`                         | 357         | 335       | ~1.07× | **Statistically Equivalent** |
+| `getOrDefault(K,V)`              | 750         | 463       | 1.62×  |           **JDK**            |
+| `hashCode()`                     | 693,495     | 615,993   | ~1.13× | **Statistically Equivalent** |
+| `keySet()`                       | 124         | 84        | 1.47×  |           **JDK**            |
+| `merge(K,V,BiFunction)`          | 582         | 1,411     | 2.43×  |          **Custom**          |
+| `put(K,V)`                       | 4,318,986   | 4,469,980 | ~1.03× | **Statistically Equivalent** |
+| `putAll(Map)`                    | 1,059,655   | 1,000,072 | ~1.06× | **Statistically Equivalent** |
+| `putIfAbsent(K,V)`               | 4,925,956   | 3,887,748 | 1.27×  |           **JDK**            |
+| `remove(K)`                      | 400         | 336       | 1.19×  |           **JDK**            |
+| `remove(K,V)`                    | 417         | 472       | ~1.13× | **Statistically Equivalent** |
+| `replace(K,V)`                   | 435         | 445       | ~1.02× | **Statistically Equivalent** |
+| `replace(K,V,V)`                 | 913         | 826       | ~1.11× | **Statistically Equivalent** |
+| `replaceAll(BiFunction)`         | 1,150,468   | 1,213,617 | ~1.05× | **Statistically Equivalent** |
+| `toString()`                     | 3,437,562   | 1,995,256 | 1.72×  |           **JDK**            |
+| `values()`                       | 80          | 87        | ~1.09× | **Statistically Equivalent** |
 
 #### Note: The following performance charts are designed to be viewed in dark mode.
 ![Combined Performance Charts](PerformanceTesting/heatmap.png)
