@@ -114,6 +114,7 @@ All methods implemented are identical to those found in the Java [Map](https://d
 
 #### Note: The following performance charts are designed to be viewed in dark mode.
 ![Combined Performance Charts](PerformanceTesting/heatmap.png)
+![Combined Performance Charts](PerformanceTesting/geometric.png)
 ![Combined Performance Charts](PerformanceTesting/constructor.png)
 ![Combined Performance Charts](PerformanceTesting/clear().png)
 ![Combined Performance Charts](PerformanceTesting/compute(K,BiFunction).png)
