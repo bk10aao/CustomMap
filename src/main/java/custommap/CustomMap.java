@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -38,8 +39,10 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     private int mapSize;
     private int size = 0;
+
     private static final double LOAD_FACTOR = 0.75f;
-    private static final int MAXIMUM_CAPACITY = 1 << 30;
+
+    private static final int MAXIMUM_CAPACITY = 1073741824;
 
     /**
      * Constructs an empty {@code CustomMap} with an initial capacity of 16 buckets.
@@ -285,7 +288,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         if (size() != otherMap.size())
             return false;
         Node<K, V>[] tab = map;
-        for (Node<K, V> head : tab) {
+        for (Node<K, V> head : tab)
             for (Node<K, V> node = head; node != null; node = node.next) {
                 K key = node.key;
                 V value = node.value;
@@ -300,7 +303,6 @@ public class CustomMap<K, V> implements Map<K, V> {
                     return false;
                 }
             }
-        }
         return true;
     }
 
@@ -442,7 +444,6 @@ public class CustomMap<K, V> implements Map<K, V> {
                 expand();
             return value;
         }
-
         V newValue = remappingFunction.apply(current.value, value);
         if (newValue == null) {
             remove(previous, index, current);
@@ -749,7 +750,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @return the computed bucket index
      * @throws NullPointerException if the key is null
      */
-    private static int hash(Object key) {
+    private static int hash(final Object key) {
         int h;
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
@@ -801,7 +802,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         return true;
     }
 
-    private void transfer(Node<K, V>[] oldMap, Node<K, V>[] newMap, int newCapacity) {
+    private void transfer(final Node<K, V>[] oldMap, final Node<K, V>[] newMap, final int newCapacity) {
         int oldCapacity = oldMap.length;
         boolean expanding = newCapacity > oldCapacity;
         int testMask = expanding ? oldCapacity : newCapacity;
@@ -842,36 +843,58 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     private final class KeySetView extends java.util.AbstractSet<K> {
-        public int size() {
-            return CustomMap.this.size();
-        }
 
         public void clear() {
             CustomMap.this.clear();
         }
 
-        public boolean contains(Object o) {
+        public boolean contains(final Object o) {
             return CustomMap.this.containsKey(o);
-        }
-
-        public boolean remove(Object o) {
-            int oldSize = CustomMap.this.size;
-            CustomMap.this.remove(o);
-            return CustomMap.this.size < oldSize;
         }
 
         public java.util.Iterator<K> iterator() {
             return new KeyIterator();
         }
+
+        public boolean remove(final Object o) {
+            int oldSize = CustomMap.this.size;
+            CustomMap.this.remove(o);
+            return CustomMap.this.size < oldSize;
+        }
+
+        public int size() {
+            return CustomMap.this.size();
+        }
     }
 
     private final class KeyIterator implements java.util.Iterator<K> {
+
         private int bucketIndex = 0;
-        private Node<K, V> nextNode = null;
-        private Node<K, V> lastReturned = null;
+
+        private Node<K, V> lastReturned, nextNode = null;
 
         private KeyIterator() {
             advanceToNextNode();
+        }
+
+        public boolean hasNext() {
+            return nextNode != null;
+        }
+
+        public K next() {
+            if (nextNode == null)
+                throw new NoSuchElementException();
+            lastReturned = nextNode;
+            K key = nextNode.key;
+            advanceToNextNode();
+            return key;
+        }
+
+        public void remove() {
+            if (lastReturned == null)
+                throw new IllegalStateException();
+            CustomMap.this.remove(lastReturned.key);
+            lastReturned = null;
         }
 
         private void advanceToNextNode() {
@@ -888,26 +911,6 @@ public class CustomMap<K, V> implements Map<K, V> {
                 }
             }
         }
-
-        public boolean hasNext() {
-            return nextNode != null;
-        }
-
-        public K next() {
-            if (nextNode == null)
-                throw new java.util.NoSuchElementException();
-            lastReturned = nextNode;
-            K key = nextNode.key;
-            advanceToNextNode();
-            return key;
-        }
-
-        public void remove() {
-            if (lastReturned == null)
-                throw new IllegalStateException();
-            CustomMap.this.remove(lastReturned.key);
-            lastReturned = null;
-        }
     }
 
     /**
@@ -915,19 +918,23 @@ public class CustomMap<K, V> implements Map<K, V> {
      * Implements {@link Map.Entry} implicitly through {@link SimpleEntry} in {@code entrySet}.
      */
     private static class Node<K, V> {
-        final int hash;
-        final K key;
-        V value;
-        Node<K, V> next;
 
-        Node(int hash, K key, V value, Node<K, V> next) {
+        private final int hash;
+
+        private final K key;
+
+        private V value;
+
+        private Node<K, V> next;
+
+        private Node(final int hash, final K key, final V value, final Node<K, V> next) {
             this.hash = hash;
             this.key = key;
             this.value = value;
             this.next = next;
         }
 
-        public V setValue(V newValue) {
+        public V setValue(final V newValue) {
             V oldValue = value;
             value = newValue;
             return oldValue;
@@ -939,15 +946,12 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     private final class EntrySetView extends java.util.AbstractSet<Map.Entry<K, V>> {
-        public int size() {
-            return CustomMap.this.size();
-        }
 
         public void clear() {
             CustomMap.this.clear();
         }
 
-        public boolean contains(Object o) {
+        public boolean contains(final Object o) {
             if (!(o instanceof Map.Entry<?, ?> entry))
                 return false;
             Object k = entry.getKey();
@@ -956,39 +960,45 @@ public class CustomMap<K, V> implements Map<K, V> {
             return mappedVal != null && mappedVal.equals(v);
         }
 
-        public boolean remove(Object o) {
+        public Iterator<Map.Entry<K, V>> iterator() {
+            return new EntryIterator();
+        }
+
+        public boolean remove(final Object o) {
             if (!(o instanceof Map.Entry<?, ?> entry))
                 return false;
             return CustomMap.this.remove(entry.getKey(), entry.getValue());
         }
 
-        public Iterator<Map.Entry<K, V>> iterator() {
-            return new EntryIterator();
+        public int size() {
+            return CustomMap.this.size();
         }
     }
 
     private final class ValuesView extends AbstractCollection<V> {
-        public int size() {
-            return CustomMap.this.size();
-        }
 
         public void clear() {
             CustomMap.this.clear();
         }
 
-        public boolean contains(Object o) {
+        public boolean contains(final Object o) {
             return CustomMap.this.containsValue(o);
         }
 
         public java.util.Iterator<V> iterator() {
             return new ValueIterator();
         }
+
+        public int size() {
+            return CustomMap.this.size();
+        }
     }
 
     private final class EntryIterator implements Iterator<Map.Entry<K, V>> {
+
         private int bucketIndex = 0;
-        private Node<K, V> nextNode = null;
-        private Node<K, V> lastReturned = null;
+
+        private Node<K, V> nextNode, lastReturned = null;
 
         private EntryIterator() {
             advanceToNextNode();
@@ -1015,7 +1025,7 @@ public class CustomMap<K, V> implements Map<K, V> {
 
         public Map.Entry<K, V> next() {
             if (nextNode == null)
-                throw new java.util.NoSuchElementException();
+                throw new NoSuchElementException();
             lastReturned = nextNode;
             Node<K, V> current = nextNode;
             advanceToNextNode();
@@ -1036,9 +1046,10 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     private final class ValueIterator implements java.util.Iterator<V> {
+
         private int bucketIndex = 0;
-        private Node<K, V> nextNode = null;
-        private Node<K, V> lastReturned = null;
+
+        private Node<K, V> lastReturned, nextNode = null;
 
         private ValueIterator() {
             advanceToNextNode();
@@ -1065,7 +1076,7 @@ public class CustomMap<K, V> implements Map<K, V> {
 
         public V next() {
             if (nextNode == null)
-                throw new java.util.NoSuchElementException();
+                throw new NoSuchElementException();
             lastReturned = nextNode;
             V value = nextNode.value;
             advanceToNextNode();
