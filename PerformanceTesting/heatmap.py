@@ -96,5 +96,5 @@ for text in cbar.ax.yaxis.get_ticklabels():
 
 # 10. Compute tight layout and save the file
 plt.tight_layout()
-plt.savefig('map_performance_heatmap_transparent.png', dpi=300, transparent=True, facecolor='none', edgecolor='none')
+plt.savefig('heatmap.png', dpi=300, transparent=True, facecolor='none', edgecolor='none')
 plt.close()

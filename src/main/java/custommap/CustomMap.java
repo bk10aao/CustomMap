@@ -2,6 +2,7 @@ package custommap;
 
 import java.util.AbstractCollection;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -42,8 +43,8 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     private static final double LOAD_FACTOR = 0.75f;
 
-    private static final int MAXIMUM_CAPACITY = 1073741824;
-    private static final int MIN_TREEIFY_CAPACITY = 8;
+    private static final int MAXIMUM_CAPACITY = 1_073_741_824;
+    private static final int MIN_TREEIFY_CAPACITY = 64;
     private static final int TREEIFY_THRESHOLD   = 8;
     private static final int UNTREEIFY_THRESHOLD = 6;
 
@@ -125,28 +126,69 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(remappingFunction, "Remapping function must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return null;
         int hash = hash(key);
         int index = hash & (tab.length - 1);
+        Node<K, V> first = tab[index];
+
+        V oldValue = null;
+        TreeNode<K, V> tNode = null;
+        Node<K, V> current = null;
         Node<K, V> previous = null;
-        Node<K, V> current = tab[index];
-        while (current != null) {
-            if (current.key.equals(key))
-                break;
-            previous = current;
-            current = current.next;
+
+        if (first instanceof TreeNode) {
+            tNode = ((TreeNode<K, V>) first).getTreeNode(hash, key);
+            if (tNode != null)
+                oldValue = tNode.value;
+        } else {
+            current = first;
+            while (current != null) {
+                if (current.key.equals(key)) {
+                    oldValue = current.value;
+                    break;
+                }
+                previous = current;
+                current = current.next;
+            }
         }
-        V newValue = remappingFunction.apply(key, (current == null) ? null : current.value);
+
+        V newValue = remappingFunction.apply(key, oldValue);
+
         if (newValue == null) {
-            if (current != null)
+            if (tNode != null) {
+                tNode.removeTreeNode(tab);
+                size--;
+                if (mapSize > 16 && size <= mapSize / 4)
+                    reduce();
+            } else if (current != null)
                 remove(previous, index, current);
             return null;
         }
-        if (current != null)
+        if (tNode != null) {
+            tNode.value = newValue;
+            return newValue;
+        }
+        if (current != null) {
             current.value = newValue;
-        else {
-            map[index] = new Node<>(hash, key, newValue, tab[index]);
+            return newValue;
+        }
+        if (first instanceof TreeNode) {
+            TreeNode<K, V> p = ((TreeNode<K, V>) first).putTreeVal(tab, hash, key, newValue);
+            if (p == null) {
+                size++;
+                if (size > (mapSize - (mapSize >>> 2)))
+                    expand();
+            }
+        } else {
+            int binCount = 0;
+            for (Node<K, V> e = first; e != null; e = e.next)
+                binCount++;
+            tab[index] = new Node<>(hash, key, newValue, first);
             size++;
-            if (size > (mapSize - (mapSize >>> 2)))
+            if (binCount >= TREEIFY_THRESHOLD - 1)
+                treeifyBin(tab, index);
+            else if (size > (mapSize - (mapSize >>> 2)))
                 expand();
         }
         return newValue;
@@ -173,14 +215,32 @@ public class CustomMap<K, V> implements Map<K, V> {
             return null;
         int hash = hash(key);
         int index = hash & (tab.length - 1);
-        for (Node<K, V> e = tab[index]; e != null; e = e.next)
-            if (e.key.equals(key))
-                return e.value;
+        Node<K, V> first = tab[index];
+        if (first instanceof TreeNode) {
+            TreeNode<K, V> p = ((TreeNode<K, V>) first).getTreeNode(hash, key);
+            if (p != null)
+                return p.value;
+        } else
+            for (Node<K, V> e = first; e != null; e = e.next)
+                if (e.key.equals(key))
+                    return e.value;
         V newValue = mappingFunction.apply(key);
-        if (newValue != null) {
-            tab[index] = new Node<>(hash, key, newValue, tab[index]);
+        if (newValue != null) if (first instanceof TreeNode) {
+            TreeNode<K, V> p = ((TreeNode<K, V>) first).putTreeVal(tab, hash, key, newValue);
+            if (p == null) {
+                size++;
+                if (size > (mapSize - (mapSize >>> 2)))
+                    expand();
+            }
+        } else {
+            int binCount = 0;
+            for (Node<K, V> e = first; e != null; e = e.next)
+                binCount++;
+            tab[index] = new Node<>(hash, key, newValue, first);
             size++;
-            if (size > (mapSize - (mapSize >>> 2)))
+            if (binCount >= TREEIFY_THRESHOLD - 1)
+                treeifyBin(tab, index);
+            else if (size > (mapSize - (mapSize >>> 2)))
                 expand();
         }
         return newValue;
@@ -203,8 +263,30 @@ public class CustomMap<K, V> implements Map<K, V> {
         Node<K, V>[] tab = map;
         if (tab == null || tab.length == 0)
             return null;
-        int index = hash(key) & (tab.length - 1);
-        Node<K, V> current = tab[index];
+        int hash = hash(key);
+        int index = hash & (tab.length - 1);
+        Node<K, V> first = tab[index];
+        if (first == null)
+            return null;
+        if (first instanceof TreeNode) {
+            TreeNode<K, V> tNode = ((TreeNode<K, V>) first).getTreeNode(hash, key);
+            if (tNode != null) {
+                V oldValue = tNode.value;
+                V newValue = remappingFunction.apply(key, oldValue);
+                if (newValue == null) {
+                    tNode.removeTreeNode(tab);
+                    size--;
+                    if (mapSize > 16 && size <= mapSize / 4)
+                        reduce();
+                    return null;
+                }
+                tNode.value = newValue;
+                return newValue;
+            }
+            return null;
+        }
+
+        Node<K, V> current = first;
         Node<K, V> previous = null;
         while (current != null) {
             if (current.key.equals(key)) {
@@ -244,7 +326,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             return false;
         if (first instanceof TreeNode)
             return ((TreeNode<K, V>) first).getTreeNode(hash, key) != null;
-        for(Node<K, V> node = first; node != null; node = node.next)
+        for (Node<K, V> node = first; node != null; node = node.next)
             if (node.key.equals(key))
                 return true;
         return false;
@@ -385,7 +467,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             TreeNode<K, V> p = ((TreeNode<K, V>) first).getTreeNode(hash, key);
             return (p != null) ? p.value : defaultValue;
         }
-        for(Node<K, V> node = first; node != null; node = node.next)
+        for (Node<K, V> node = first; node != null; node = node.next)
             if (node.key.equals(key))
                 return node.value;
         return defaultValue;
@@ -458,29 +540,66 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(value, "Value must not be null.");
         requireNonNull(remappingFunction, "Remapping BiFunction must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return null;
         int hash = hash(key);
         int index = hash & (tab.length - 1);
+        Node<K, V> first = tab[index];
+
+        TreeNode<K, V> tNode = null;
+        Node<K, V> current = null;
         Node<K, V> previous = null;
-        Node<K, V> current = tab[index];
-        while (current != null) {
-            if (current.key.equals(key))
-                break;
-            previous = current;
-            current = current.next;
+
+        if (first instanceof TreeNode)
+            tNode = ((TreeNode<K, V>) first).getTreeNode(hash, key);
+        else {
+            current = first;
+            while (current != null) {
+                if (current.key.equals(key))
+                    break;
+                previous = current;
+                current = current.next;
+            }
         }
-        if (current == null) {
-            tab[index] = new Node<>(hash, key, value, tab[index]);
-            size++;
-            if (size > (mapSize - (mapSize >>> 2)))
-                expand();
+
+        if (tNode == null && current == null) {
+            if (first instanceof TreeNode) {
+                TreeNode<K, V> p = ((TreeNode<K, V>) first).putTreeVal(tab, hash, key, value);
+                if (p == null) {
+                    size++;
+                    if (size > (mapSize - (mapSize >>> 2)))
+                        expand();
+                }
+            } else {
+                int binCount = 0;
+                for (Node<K, V> e = first; e != null; e = e.next)
+                    binCount++;
+                tab[index] = new Node<>(hash, key, value, first);
+                size++;
+                if (binCount >= TREEIFY_THRESHOLD - 1)
+                    treeifyBin(tab, index);
+                else if (size > (mapSize - (mapSize >>> 2)))
+                    expand();
+            }
             return value;
         }
-        V newValue = remappingFunction.apply(current.value, value);
+
+        V oldValue = (tNode != null) ? tNode.value : current.value;
+        V newValue = remappingFunction.apply(oldValue, value);
         if (newValue == null) {
-            remove(previous, index, current);
+            if (tNode != null) {
+                tNode.removeTreeNode(tab);
+                size--;
+                if (mapSize > 16 && size <= mapSize / 4)
+                    reduce();
+            } else
+                remove(previous, index, current);
             return null;
         }
-        current.value = newValue;
+        if (tNode != null)
+            tNode.value = newValue;
+        else
+            current.value = newValue;
         return newValue;
     }
 
@@ -522,9 +641,8 @@ public class CustomMap<K, V> implements Map<K, V> {
             }
             int binCount = 0;
             for (e = first; ; e = e.next) {
-                if (e.key.equals(key)) {
+                if (e.key.equals(key))
                     return e.setValue(value);
-                }
                 if (e.next == null) {
                     e.next = new Node<>(hash, key, value, null);
                     if (binCount >= TREEIFY_THRESHOLD - 1)
@@ -556,38 +674,9 @@ public class CustomMap<K, V> implements Map<K, V> {
         int mSize = m.size();
         if (mSize == 0)
             return;
-        for (Map.Entry<? extends K, ? extends V> entry : m.entrySet())
-            requireNonNull(entry.getKey(), "Key value must not be null.");
-        int targetSize = size + mSize;
-        if (targetSize > (mapSize - (mapSize >>> 2))) {
-            int targetCapacity = mapSize;
-            while (targetSize > (targetCapacity - (targetCapacity >>> 2)) && targetCapacity < MAXIMUM_CAPACITY)
-                targetCapacity <<= 1;
-            if (targetCapacity > mapSize) {
-                mapSize = targetCapacity;
-                Node<K, V>[] newMap = new Node[mapSize];
-                transfer(this.map, newMap, mapSize);
-                this.map = newMap;
-            }
-        }
-        Node<K, V>[] tab = map;
-        int mask = mapSize - 1;
         for (Map.Entry<? extends K, ? extends V> entry : m.entrySet()) {
-            K key = entry.getKey();
-            V value = entry.getValue();
-            int hash = hash(key);
-            int index = hash & mask;
-            boolean updated = false;
-            for (Node<K, V> e = tab[index]; e != null; e = e.next)
-                if (e.key.equals(key)) {
-                    e.setValue(value);
-                    updated = true;
-                    break;
-                }
-            if (!updated) {
-                tab[index] = new Node<>(hash, key, value, tab[index]);
-                size++;
-            }
+            requireNonNull(entry.getKey(), "Key value must not be null.");
+            put(entry.getKey(), entry.getValue());
         }
     }
 
@@ -612,10 +701,33 @@ public class CustomMap<K, V> implements Map<K, V> {
             return null;
         int hash = hash(key);
         int index = hash & (tab.length - 1);
-        for (Node<K, V> e = tab[index]; e != null; e = e.next)
-            if (e.key.equals(key))
-                return e.value;
-        tab[index] = new Node<>(hash, key, value, tab[index]);
+        Node<K, V> first = tab[index];
+        if (first == null)
+            tab[index] = new Node<>(hash, key, value, null);
+        else {
+            if (first instanceof TreeNode) {
+                TreeNode<K, V> p = ((TreeNode<K, V>) first).putTreeVal(tab, hash, key, value);
+                if (p != null)
+                    return p.value;
+                size++;
+                if (size > (mapSize - (mapSize >>> 2)))
+                    expand();
+                return null;
+            }
+
+            int binCount = 0;
+            for (Node<K, V> e = first; ; e = e.next) {
+                if (e.key.equals(key))
+                    return e.value;
+                if (e.next == null) {
+                    e.next = new Node<>(hash, key, value, null);
+                    if (binCount >= TREEIFY_THRESHOLD - 1)
+                        treeifyBin(tab, index);
+                    break;
+                }
+                binCount++;
+            }
+        }
         size++;
         if (size > (mapSize - (mapSize >>> 2)))
             expand();
@@ -636,16 +748,16 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V remove(final Object key) {
         requireNonNull(key, "Key value must not be null.");
         Node<K, V>[] tab = map;
-        if(tab == null || tab.length == 0)
+        if (tab == null || tab.length == 0)
             return null;
         int hash = hash(key);
         int index = hash & (tab.length - 1);
         Node<K, V> first = tab[index];
-        if(first == null)
+        if (first == null)
             return null;
-        if(first instanceof TreeNode) {
+        if (first instanceof TreeNode) {
             TreeNode<K, V> node = ((TreeNode<K, V>) first).getTreeNode(hash, key);
-            if(node != null) {
+            if (node != null) {
                 V oldValue = node.value;
                 node.removeTreeNode(tab);
                 size--;
@@ -689,9 +801,25 @@ public class CustomMap<K, V> implements Map<K, V> {
         Node<K, V>[] tab = map;
         if (tab == null || tab.length == 0)
             return false;
-        int index = hash(key) & (tab.length - 1);
+        int hash = hash(key);
+        int index = hash & (tab.length - 1);
+        Node<K, V> first = tab[index];
+        if (first == null)
+            return false;
+        if (first instanceof TreeNode) {
+            TreeNode<K, V> node = ((TreeNode<K, V>) first).getTreeNode(hash, key);
+            if (node != null && Objects.equals(node.value, value)) {
+                node.removeTreeNode(tab);
+                size--;
+                if (mapSize > 16 && size <= mapSize / 4)
+                    reduce();
+                return true;
+            }
+            return false;
+        }
+
+        Node<K, V> current = first;
         Node<K, V> previous = null;
-        Node<K, V> current = tab[index];
         while (current != null) {
             if (current.key.equals(key) && Objects.equals(current.value, value))
                 return remove(previous, index, current);
@@ -848,9 +976,8 @@ public class CustomMap<K, V> implements Map<K, V> {
         if (mapSize <= 16 || size > mapSize / 4)
             return;
         int newCapacity = mapSize >> 1;
-        if (newCapacity < 16) {
+        if (newCapacity < 16)
             newCapacity = 16;
-        }
         if (newCapacity >= mapSize)
             return;
         Node<K, V>[] newMap = new Node[newCapacity];
@@ -906,8 +1033,8 @@ public class CustomMap<K, V> implements Map<K, V> {
                         newMap[targetIndex] = newNode;
                         current = next;
                     }
-            } else if (head.next == null)
-                newMap[head.hash & (newCapacity - 1)] = head;
+                } else if (head.next == null)
+                    newMap[head.hash & (newCapacity - 1)] = head;
             else if (head instanceof TreeNode)
                 ((TreeNode<K, V>) head).split(newMap, i, oldCapacity);
             else {
@@ -944,18 +1071,18 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
     }
 
-    private void treeifyBin(Node<K, V>[] tab, int index) {
-        if(tab == null || tab.length < MIN_TREEIFY_CAPACITY) {
+    private void treeifyBin(final Node<K, V>[] tab, final int index) {
+        if (tab == null || tab.length < MIN_TREEIFY_CAPACITY) {
             expand();
             return;
         }
         Node<K, V> e = tab[index];
-        if(e == null)
+        if (e == null)
             return;
         TreeNode<K, V> hd = null, tl = null;
         do {
             TreeNode<K, V> p = new TreeNode<>(e.hash, e.key, e.value, null);
-            if(tl == null)
+            if (tl == null)
                 hd = p;
             else {
                 p.previous = tl;
@@ -965,7 +1092,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             e = e.next;
         } while (e != null);
         tab[index] = hd;
-        if(hd != null)
+        if (hd != null)
             hd.treeify(tab);
     }
 
@@ -1072,7 +1199,7 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
     }
 
-    private final class EntrySetView extends java.util.AbstractSet<Map.Entry<K, V>> {
+    private final class EntrySetView extends AbstractSet<Entry<K, V>> {
 
         public void clear() {
             CustomMap.this.clear();
@@ -1118,10 +1245,10 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     private static final class TreeNode<K, V> extends Node<K, V> {
 
-        TreeNode<K, V> parent;
-        TreeNode<K, V> previous;
-        TreeNode<K, V> left;
-        TreeNode<K, V> right;
+        private TreeNode<K, V> parent;
+        private TreeNode<K, V> previous;
+        private TreeNode<K, V> left;
+        private TreeNode<K, V> right;
 
         private boolean RED;
 
@@ -1230,7 +1357,6 @@ public class CustomMap<K, V> implements Map<K, V> {
                     return currentNode;
                 } else if (!parentNode.RED || (grandparentNode = parentNode.parent) == null)
                     return root;
-
                 if (parentNode == grandparentNode.left) {
                     if ((grandparentRight = grandparentNode.right) != null && grandparentRight.RED) {
                         grandparentRight.RED = false;
@@ -1250,23 +1376,21 @@ public class CustomMap<K, V> implements Map<K, V> {
                             }
                         }
                     }
+                } else if ((grandparentLeft = grandparentNode.left) != null && grandparentLeft.RED) {
+                    grandparentLeft.RED = false;
+                    parentNode.RED = false;
+                    grandparentNode.RED = true;
+                    currentNode = grandparentNode;
                 } else {
-                    if ((grandparentLeft = grandparentNode.left) != null && grandparentLeft.RED) {
-                        grandparentLeft.RED = false;
+                    if (currentNode == parentNode.left) {
+                        root = rotateRight(root, currentNode = parentNode);
+                        grandparentNode = (parentNode = currentNode.parent) == null ? null : parentNode.parent;
+                    }
+                    if (parentNode != null) {
                         parentNode.RED = false;
-                        grandparentNode.RED = true;
-                        currentNode = grandparentNode;
-                    } else {
-                        if (currentNode == parentNode.left) {
-                            root = rotateRight(root, currentNode = parentNode);
-                            grandparentNode = (parentNode = currentNode.parent) == null ? null : parentNode.parent;
-                        }
-                        if (parentNode != null) {
-                            parentNode.RED = false;
-                            if (grandparentNode != null) {
-                                grandparentNode.RED = true;
-                                root = rotateLeft(root, grandparentNode);
-                            }
+                        if (grandparentNode != null) {
+                            grandparentNode.RED = true;
+                            root = rotateLeft(root, grandparentNode);
                         }
                     }
                 }
@@ -1410,7 +1534,6 @@ public class CustomMap<K, V> implements Map<K, V> {
                 replacement = sr;
             } else
                 replacement = Objects.requireNonNullElseGet(pl, () -> Objects.requireNonNullElse(pr, p));
-
             if (replacement != p) {
                 TreeNode<K, V> pp = replacement.parent = p.parent;
                 if (pp == null)
@@ -1421,9 +1544,7 @@ public class CustomMap<K, V> implements Map<K, V> {
                     pp.right = replacement;
                 p.left = p.right = p.parent = null;
             }
-
             TreeNode<K, V> r = p.RED ? root : balanceDeletion(root, replacement);
-
             if (replacement == p) {
                 TreeNode<K, V> pp = p.parent;
                 p.parent = null;
