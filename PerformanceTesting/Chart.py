@@ -5,7 +5,6 @@ with a transparent background. Matches the style of the reference charts exactly
 """
 
 import matplotlib
-
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -19,13 +18,13 @@ import numpy as np
 # Configuration
 # ──────────────────────────────────────────────────────────────────────────────
 
-CUSTOMMAP_CSV_PATH = "CustomMap_jmh_performance.csv"
-HASHMAP_CSV_PATH = "HashMap_jmh_performance.csv"
+CUSTOMMAP_CSV_PATH = "CustomMap_wide_matrix.csv"
+HASHMAP_CSV_PATH = "HashMap_wide_matrix.csv"
 OUTPUT_DIR = "."
 
 COLORS = {
     'purple': '#9B6EF3',  # Neon Purple for CustomMap
-    'blue': '#4DA6FF',  # Bright Blue for JDK HashMap
+    'blue': '#4DA6FF',    # Bright Blue for JDK HashMap
     'bg': '#0D0D0D',
     'grid': '#252525',
 }
@@ -33,62 +32,33 @@ COLORS = {
 FIGURE_SIZE = (12, 6.2)
 DPI = 150
 
-# Unified column keys to compare between both files
+# Map display titles / filenames to their exact wide matrix column headers
 OPERATIONS = {
-    'put(K,V)': 'put(K,V)',
-    'get(K)': 'get(K)',
-    'getOrDefault(K,V)': 'getOrDefault(K,V)',
-    'remove(K)': 'remove(K)',
-    'remove(K,V)': 'remove(K,V)',
-    'containsKey(K)': 'containsKey(K)',
-    'containsValue(V)': 'containsValue(V)',
-    'putIfAbsent(K,V)': 'putIfAbsent(K,V)',
-    'replace(K,V)': 'replace(K,V)',
-    'replace(K,V,V)': 'replace(K,V,V)',
-    'keySet()': 'keySet()',
-    'values()': 'values()',
+    'Constructor()': 'Constructor()',
     'clear()': 'clear()',
-    'equals(Object o)': 'equals(Object o)',
-    'toString()': 'toString()',
+    'compute()': 'compute()',
+    'computeIfAbsent()': 'computeIfAbsent()',
+    'computeIfPresent()': 'computeIfPresent()',
+    'containsKey()': 'containsKey()',
+    'containsValue()': 'containsValue()',
     'entrySet()': 'entrySet()',
-    'putAll(Map)': 'putAll(Map)',
-    'compute(K,BiFunction)': 'compute(K,BiFunction)',
-    'computeIfAbsent(K,Function)': 'computeIfAbsent(K,Function)',
-    'computeIfPresent(K,BiFunction)': 'computeIfPresent(K,BiFunction)',
-    'forEach(BiConsumer)': 'forEach(BiConsumer)',
-    'merge(K,V,BiFunction)': 'merge(K,V,BiFunction)',
-    'replaceAll(BiFunction)': 'replaceAll(BiFunction)',
-    'constructor': 'constructor',
+    'equals()': 'equals()',
+    'forEach()': 'forEach()',
+    'get()': 'get()',
+    'getOrDefault()': 'getOrDefault()',
     'hashCode()': 'hashCode()',
-}
-
-# Mapping if CustomMap uses PascalCase headers
-CUSTOMMAP_MAPPING = {
-    'Put': 'put(K,V)',
-    'Get': 'get(K)',
-    'GetOrDefault': 'getOrDefault(K,V)',
-    'Remove': 'remove(K)',
-    'RemoveWithValue': 'remove(K,V)',
-    'ContainsKey': 'containsKey(K)',
-    'ContainsValue': 'containsValue(V)',
-    'PutIfAbsent': 'putIfAbsent(K,V)',
-    'Replace': 'replace(K,V)',
-    'ReplaceWithOldNew': 'replace(K,V,V)',
-    'KeySet': 'keySet()',
-    'Values': 'values()',
-    'Clear': 'clear()',
-    'Equals': 'equals(Object o)',
-    'ToString': 'toString()',
-    'EntrySet': 'entrySet()',
-    'PutAll': 'putAll(Map)',
-    'Compute': 'compute(K,BiFunction)',
-    'ComputeIfAbsent': 'computeIfAbsent(K,Function)',
-    'ComputeIfPresent': 'computeIfPresent(K,BiFunction)',
-    'ForEach': 'forEach(BiConsumer)',
-    'Merge': 'merge(K,V,BiFunction)',
-    'ReplaceAll': 'replaceAll(BiFunction)',
-    'Constructor': 'constructor',
-    'HashCode': 'hashCode()'
+    'keySet()': 'keySet()',
+    'merge()': 'merge()',
+    'put()': 'put()',
+    'putAll()': 'putAll()',
+    'putIfAbsent()': 'putIfAbsent()',
+    'remove()': 'remove()',
+    'remove(Object, Object)': 'remove(Object, Object)',
+    'replace()': 'replace()',
+    'replaceAll()': 'replaceAll()',
+    'replace(K, V, V)': 'replace(K, V, V)',
+    'toString()': 'toString()',
+    'values()': 'values()',
 }
 
 
@@ -96,17 +66,14 @@ CUSTOMMAP_MAPPING = {
 # CSV Loading
 # ──────────────────────────────────────────────────────────────────────────────
 
-def load_csv(filepath, is_custommap=False):
-    """Load semicolon-delimited JMH CSV file and return dict: {size: {op_name: time_value}}"""
+def load_csv(filepath):
+    """Load semicolon-delimited wide matrix CSV file and return dict: {size: {op_name: time_value}}"""
     df = pd.read_csv(filepath, sep=';')
-    if is_custommap:
-        df = df.rename(columns=CUSTOMMAP_MAPPING)
-
     data = {}
     for _, row in df.iterrows():
         size = int(row['Size'])
         data[size] = {
-            col: float(row[col]) for col in df.columns if col != 'Size'
+            col: float(row[col]) for col in df.columns if col != 'Size' and not pd.isna(row[col])
         }
     return data
 
@@ -121,14 +88,14 @@ def format_y_axis(value, pos):
     return f'{int(value):,}'
 
 
-def create_chart(csv_col, operation_label, custommap_data, hashmap_data,
+def create_chart(chart_title, col_name, custommap_data, hashmap_data,
                  canonical_sizes, output_path):
     custommap_values = [
-        custommap_data[s][csv_col] if s in custommap_data and csv_col in custommap_data[s] else np.nan
+        custommap_data[s][col_name] if s in custommap_data and col_name in custommap_data[s] else np.nan
         for s in canonical_sizes
     ]
     hashmap_values = [
-        hashmap_data[s][csv_col] if s in hashmap_data and csv_col in hashmap_data[s] else np.nan
+        hashmap_data[s][col_name] if s in hashmap_data and col_name in hashmap_data[s] else np.nan
         for s in canonical_sizes
     ]
 
@@ -165,7 +132,7 @@ def create_chart(csv_col, operation_label, custommap_data, hashmap_data,
 
     ax.set_xlabel('Size', color='white', fontsize=12, labelpad=12)
     ax.set_ylabel('Time (ns/op)', color='white', fontsize=11, labelpad=10)
-    ax.set_title(csv_col, color='white', fontsize=15, fontweight='bold', pad=14)
+    ax.set_title(chart_title, color='white', fontsize=15, fontweight='bold', pad=14)
 
     legend_elements = [
         Line2D([0], [0], marker='o', color='none', markerfacecolor=COLORS['purple'], markeredgecolor=COLORS['purple'],
@@ -196,18 +163,19 @@ def main():
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    custommap_data = load_csv(CUSTOMMAP_CSV_PATH, is_custommap=True)
-    hashmap_data = load_csv(HASHMAP_CSV_PATH, is_custommap=False)
+    custommap_data = load_csv(CUSTOMMAP_CSV_PATH)
+    hashmap_data = load_csv(HASHMAP_CSV_PATH)
 
     canonical_sizes = sorted(list(set(custommap_data.keys()) | set(hashmap_data.keys())))
 
-    for csv_col, chart_label in OPERATIONS.items():
-        if not any(csv_col in custommap_data.get(s, {}) or csv_col in hashmap_data.get(s, {}) for s in canonical_sizes):
+    for chart_label, col_name in OPERATIONS.items():
+        if not any(col_name in custommap_data.get(s, {}) or col_name in hashmap_data.get(s, {}) for s in canonical_sizes):
             continue
 
-        output_path = os.path.join(OUTPUT_DIR, f'{chart_label}.png')
-        create_chart(csv_col, chart_label, custommap_data, hashmap_data, canonical_sizes, output_path)
-        print(f"  ✓ {chart_label}.png")
+        output_filename = chart_label.replace('/', '_').replace('(', '').replace(')', '').replace(',', '_') + '.png'
+        output_path = os.path.join(OUTPUT_DIR, output_filename)
+        create_chart(chart_label, col_name, custommap_data, hashmap_data, canonical_sizes, output_path)
+        print(f"  ✓ {output_filename}")
 
     print(f"\n✓ All comparison charts saved successfully.")
 
