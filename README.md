@@ -9,78 +9,77 @@ All methods implemented are identical to those found in the Java [Map](https://d
 
 ## Time Complexity
 
-| Method                                |       CustomMap       |        HashMap        | Winner  |
-|:--------------------------------------|:---------------------:|:---------------------:|:-------:|
-| **`clear()`**                         |         O(m)          |         O(m)          | **Tie** |
-| **`compute(K, BiFunction)`**          | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`computeIfAbsent(K, Function)`**    | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`computeIfPresent(K, BiFunction)`** | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`containsKey(Object)`**             | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`containsValue(Object)`**           |         O(n)          |         O(n)          | **Tie** |
-| **`entrySet()`**                      |         O(1)          |         O(1)          | **Tie** |
-| **`equals(Object)`**                  |         O(n)          |         O(n)          | **Tie** |
-| **`expand()`**                        |       O(m + n)        |       O(m + n)        | **Tie** |
-| **`forEach(BiConsumer)`**             |         O(n)          |         O(n)          | **Tie** |
-| **`get(Object)`**                     | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`getOrDefault(Object, V)`**         | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`hash(Object)`**                    |         O(1)          |         O(1)          | **Tie** |
-| **`hashCode()`**                      |         O(n)          |         O(n)          | **Tie** |
-| **`isEmpty()`**                       |         O(1)          |         O(1)          | **Tie** |
-| **`keySet()`**                        |         O(1)          |         O(1)          | **Tie** |
-| **`merge(K, V, BiFunction)`**         | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`put(K, V)`**                       | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`putAll(Map)`**                     |   O(m_src + n_src)    |   O(m_src + n_src)    | **Tie** |
-| **`putIfAbsent(K, V)`**               | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`reduce()`**                        |       O(m + n)        |       O(m + n)        | **Tie** |
-| **`remove(Object)`**                  | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`remove(Object, Object)`**          | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`replace(K, V)`**                   | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`replace(K, V, V)`**                | O(1) avg / O(n) worst | O(1) avg / O(n) worst | **Tie** |
-| **`replaceAll(BiFunction)`**          |         O(n)          |         O(n)          | **Tie** |
-| **`size()`**                          |         O(1)          |         O(1)          | **Tie** |
-| **`toString()`**                      |         O(n)          |         O(n)          | **Tie** |
-| **`values()`**                        |         O(1)          |         O(1)          | **Tie** |
+| Method                                |           CustomMap           |            HashMap            | Winner  |
+|:--------------------------------------|:-----------------------------:|:-----------------------------:|:-------:|
+| **`clear()`**                         |       $\mathcal{O}(m)$        |       $\mathcal{O}(m)$        | **Tie** |
+| **`compute(K, BiFunction)`**          |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`computeIfAbsent(K, Function)`**    |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`computeIfPresent(K, BiFunction)`** |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`containsKey(Object)`**             |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`containsValue(Object)`**           |     $\mathcal{O}(m + n)$      |     $\mathcal{O}(m + n)$      | **Tie** |
+| **`entrySet()`**                      |       $\mathcal{O}(1)$        |       $\mathcal{O}(1)$        | **Tie** |
+| **`equals(Object)`**                  |       $\mathcal{O}(n)$        |       $\mathcal{O}(n)$        | **Tie** |
+| **`expand()`**                        |     $\mathcal{O}(m + n)$      |     $\mathcal{O}(m + n)$      | **Tie** |
+| **`forEach(BiConsumer)`**             |     $\mathcal{O}(m + n)$      |     $\mathcal{O}(m + n)$      | **Tie** |
+| **`get(Object)`**                     |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`getOrDefault(Object, V)`**         |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`hash(Object)`**                    |       $\mathcal{O}(1)$        |       $\mathcal{O}(1)$        | **Tie** |
+| **`hashCode()`**                      |     $\mathcal{O}(m + n)$      |     $\mathcal{O}(m + n)$      | **Tie** |
+| **`isEmpty()`**                       |       $\mathcal{O}(1)$        |       $\mathcal{O}(1)$        | **Tie** |
+| **`keySet()`**                        |       $\mathcal{O}(1)$        |       $\mathcal{O}(1)$        | **Tie** |
+| **`merge(K, V, BiFunction)`**         |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`put(K, V)`**                       |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`putAll(Map)`**                     | $\mathcal{O}(n_{src} \log n)$ | $\mathcal{O}(n_{src} \log n)$ | **Tie** |
+| **`putIfAbsent(K, V)`**               |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`reduce()`**                        |     $\mathcal{O}(m + n)$      |     $\mathcal{O}(m + n)$      | **Tie** |
+| **`remove(Object)`**                  |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`remove(Object, Object)`**          |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`replace(K, V)`**                   |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`replace(K, V, V)`**                |     $\mathcal{O}(\log n)$     |     $\mathcal{O}(\log n)$     | **Tie** |
+| **`replaceAll(BiFunction)`**          |     $\mathcal{O}(m + n)$      |     $\mathcal{O}(m + n)$      | **Tie** |
+| **`size()`**                          |       $\mathcal{O}(1)$        |       $\mathcal{O}(1)$        | **Tie** |
+| **`toString()`**                      |     $\mathcal{O}(m + n)$      |     $\mathcal{O}(m + n)$      | **Tie** |
+| **`values()`**                        |       $\mathcal{O}(1)$        |       $\mathcal{O}(1)$        | **Tie** |
 
-### Space Complexity
+### Auxiliary Space Complexity
 
-| Method                                | CustomMap | HashMap  | Winner  |
-|:--------------------------------------|:---------:|:--------:|:-------:|
-| **`clear()`**                         |   O(1)    |   O(1)   | **Tie** |
-| **`compute(K, BiFunction)`**          |   O(1)    |   O(1)   | **Tie** |
-| **`computeIfAbsent(K, Function)`**    |   O(1)    |   O(1)   | **Tie** |
-| **`computeIfPresent(K, BiFunction)`** |   O(1)    |   O(1)   | **Tie** |
-| **`containsKey(Object)`**             |   O(1)    |   O(1)   | **Tie** |
-| **`containsValue(Object)`**           |   O(1)    |   O(1)   | **Tie** |
-| **`entrySet()`**                      |   O(n)    |   O(n)   | **Tie** |
-| **`equals(Object)`**                  |   O(1)    |   O(1)   | **Tie** |
-| **`expand()`**                        | O(m + n)  | O(m + n) | **Tie** |
-| **`forEach(BiConsumer)`**             |   O(1)    |   O(1)   | **Tie** |
-| **`get(Object)`**                     |   O(1)    |   O(1)   | **Tie** |
-| **`getOrDefault(Object, V)`**         |   O(1)    |   O(1)   | **Tie** |
-| **`hash(Object)`**                    |   O(1)    |   O(1)   | **Tie** |
-| **`hashCode()`**                      |   O(1)    |   O(1)   | **Tie** |
-| **`isEmpty()`**                       |   O(1)    |   O(1)   | **Tie** |
-| **`keySet()`**                        |   O(n)    |   O(n)   | **Tie** |
-| **`merge(K, V, BiFunction)`**         |   O(1)    |   O(1)   | **Tie** |
-| **`put(K, V)`**                       |   O(1)    |   O(1)   | **Tie** |
-| **`putAll(Map)`**                     | O(m + n)  | O(m + n) | **Tie** |
-| **`putIfAbsent(K, V)`**               |   O(1)    |   O(1)   | **Tie** |
-| **`reduce()`**                        | O(m + n)  | O(m + n) | **Tie** |
-| **`remove(Object)`**                  |   O(1)    |   O(1)   | **Tie** |
-| **`remove(Object, Object)`**          |   O(1)    |   O(1)   | **Tie** |
-| **`replace(K, V)`**                   |   O(1)    |   O(1)   | **Tie** |
-| **`replace(K, V, V)`**                |   O(1)    |   O(1)   | **Tie** |
-| **`replaceAll(BiFunction)`**          |   O(1)    |   O(1)   | **Tie** |
-| **`size()`**                          |   O(1)    |   O(1)   | **Tie** |
-| **`toString()`**                      |   O(n)    |   O(n)   | **Tie** |
-| **`values()`**                        |   O(n)    |   O(n)   | **Tie** |
+| Method                                |             CustomMap             |              HashMap              | Winner  |
+|:--------------------------------------|:---------------------------------:|:---------------------------------:|:-------:|
+| **`clear()`**                         |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`compute(K, BiFunction)`**          |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`computeIfAbsent(K, Function)`**    |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`computeIfPresent(K, BiFunction)`** |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`containsKey(Object)`**             |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`containsValue(Object)`**           |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`entrySet()`**                      |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`equals(Object)`**                  |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`expand()`**                        |         $\mathcal{O}(m)$          |         $\mathcal{O}(m)$          | **Tie** |
+| **`forEach(BiConsumer)`**             |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`get(Object)`**                     |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`getOrDefault(Object, V)`**         |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`hash(Object)`**                    |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`hashCode()`**                      |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`isEmpty()`**                       |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`keySet()`**                        |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`merge(K, V, BiFunction)`**         |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`put(K, V)`**                       |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`putAll(Map)`**                     | $\mathcal{O}(m + n_{\text{src}})$ | $\mathcal{O}(m + n_{\text{src}})$ | **Tie** |
+| **`putIfAbsent(K, V)`**               |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`reduce()`**                        |         $\mathcal{O}(m)$          |         $\mathcal{O}(m)$          | **Tie** |
+| **`remove(Object)`**                  |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`remove(Object, Object)`**          |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`replace(K, V)`**                   |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`replace(K, V, V)`**                |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`replaceAll(BiFunction)`**          |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`size()`**                          |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
+| **`toString()`**                      |         $\mathcal{O}(n)$          |         $\mathcal{O}(n)$          | **Tie** |
+| **`values()`**                        |         $\mathcal{O}(1)$          |         $\mathcal{O}(1)$          | **Tie** |
 
-**Notes**:
-- **m**: Number of buckets in the map.
-- **n**: Number of key-value mappings in the map.
+**Notes:**
+- **$m$**: Number of buckets in the map (table capacity).
+- **$n$**: Number of key-value mappings (entries) currently in the map.
 - **$m_{\text{new}}$**: Number of buckets after resizing.
-- **$m_{\text{src}}$**: Number of buckets in the source/input map.
-- **$n_{\text{src}}$**: Number of entries in the source/input map.
+- **$n_{\text{src}}$**: Number of entries in the source/input map (`m.size()`).
 
 ### Performance vs Java HashMap (Averaged Across All Sizes)
 
