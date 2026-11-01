@@ -43,6 +43,9 @@ public class CustomMap<K, V> implements Map<K, V> {
     private static final double LOAD_FACTOR = 0.75f;
 
     private static final int MAXIMUM_CAPACITY = 1073741824;
+    private static final int MIN_TREEIFY_CAPACITY = 8;
+    private static final int TREEIFY_THRESHOLD   = 8;
+    private static final int UNTREEIFY_THRESHOLD = 6;
 
     /**
      * Constructs an empty {@code CustomMap} with an initial capacity of 16 buckets.
@@ -166,6 +169,8 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(key, "Key must not be null.");
         requireNonNull(mappingFunction, "Mapping function must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return null;
         int hash = hash(key);
         int index = hash & (tab.length - 1);
         for (Node<K, V> e = tab[index]; e != null; e = e.next)
@@ -196,6 +201,8 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(remappingFunction, "Remapping function must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return null;
         int index = hash(key) & (tab.length - 1);
         Node<K, V> current = tab[index];
         Node<K, V> previous = null;
@@ -228,8 +235,16 @@ public class CustomMap<K, V> implements Map<K, V> {
     public boolean containsKey(final Object key) {
         requireNonNull(key, "Key value must not be null.");
         Node<K, V>[] tab = map;
-        int index = hash(key) & (tab.length - 1);
-        for (Node<K, V> node = tab[index]; node != null; node = node.next)
+        if (tab == null || tab.length == 0)
+            return false;
+        int hash = hash(key);
+        int index = hash & (tab.length - 1);
+        Node<K, V> first = tab[index];
+        if (first == null)
+            return false;
+        if (first instanceof TreeNode)
+            return ((TreeNode<K, V>) first).getTreeNode(hash, key) != null;
+        for(Node<K, V> node = first; node != null; node = node.next)
             if (node.key.equals(key))
                 return true;
         return false;
@@ -245,6 +260,8 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     public boolean containsValue(final Object value) {
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return false;
         for (int i = 0; i < tab.length; i++)
             for (Node<K, V> node = tab[i]; node != null; node = node.next)
                 if (Objects.equals(node.value, value))
@@ -317,6 +334,8 @@ public class CustomMap<K, V> implements Map<K, V> {
     public void forEach(final BiConsumer<? super K, ? super V> action) {
         requireNonNull(action, "BiConsumer must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null)
+            return;
         for (Node<K, V> node : tab)
             for (Node<K, V> n = node; n != null; n = n.next)
                 action.accept(n.key, n.value);
@@ -355,10 +374,20 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V getOrDefault(final Object key, final V defaultValue) {
         requireNonNull(key, "Key value must not be null.");
         Node<K, V>[] tab = map;
-        int index = hash(key) & (tab.length - 1);
-        for (Node<K, V> entry = tab[index]; entry != null; entry = entry.next)
-            if (entry.key.equals(key))
-                return entry.value;
+        if (tab == null || tab.length == 0)
+            return defaultValue;
+        int hash = hash(key);
+        int index = hash & (tab.length - 1);
+        Node<K, V> first = tab[index];
+        if (first == null)
+            return defaultValue;
+        if (first instanceof TreeNode) {
+            TreeNode<K, V> p = ((TreeNode<K, V>) first).getTreeNode(hash, key);
+            return (p != null) ? p.value : defaultValue;
+        }
+        for(Node<K, V> node = first; node != null; node = node.next)
+            if (node.key.equals(key))
+                return node.value;
         return defaultValue;
     }
 
@@ -376,8 +405,10 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @see Objects#hashCode(Object)
      */
     public int hashCode() {
-        int result = 0;
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return 0;
+        int result = 0;
         for (Node<K, V> node : tab)
             for (Node<K, V> e = node; e != null; e = e.next)
                 result += Objects.hashCode(e.key) ^ Objects.hashCode(e.value);
@@ -467,12 +498,42 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V put(final K key, final V value) {
         requireNonNull(key, "Key value must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return null;
         int hash = hash(key);
-        int index = hash & (tab.length - 1);
-        for (Node<K, V> e = tab[index]; e != null; e = e.next)
-            if (e.key.equals(key))
-                return e.setValue(value);
-        tab[index] = new Node<>(hash, key, value, tab[index]);
+        int index;
+        int n;
+        if (tab == null || (n = tab.length) == 0)
+            n = (tab = map).length;
+        index = hash & (n - 1);
+        Node<K, V> first = tab[index];
+        if (first == null)
+            tab[index] = new Node<>(hash, key, value, null);
+        else {
+            Node<K, V> e;
+            if (first instanceof TreeNode) {
+                TreeNode<K, V> p = ((TreeNode<K, V>) first).putTreeVal(tab, hash, key, value);
+                if (p == null) {
+                    size++;
+                    if (size > (mapSize - (mapSize >>> 2)))
+                        expand();
+                }
+                return p == null ? null : p.setValue(value);
+            }
+            int binCount = 0;
+            for (e = first; ; e = e.next) {
+                if (e.key.equals(key)) {
+                    return e.setValue(value);
+                }
+                if (e.next == null) {
+                    e.next = new Node<>(hash, key, value, null);
+                    if (binCount >= TREEIFY_THRESHOLD - 1)
+                        treeifyBin(tab, index);
+                    break;
+                }
+                binCount++;
+            }
+        }
         size++;
         if (size > (mapSize - (mapSize >>> 2)))
             expand();
@@ -547,6 +608,8 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(value, "Value must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return null;
         int hash = hash(key);
         int index = hash & (tab.length - 1);
         for (Node<K, V> e = tab[index]; e != null; e = e.next)
@@ -573,8 +636,25 @@ public class CustomMap<K, V> implements Map<K, V> {
     public V remove(final Object key) {
         requireNonNull(key, "Key value must not be null.");
         Node<K, V>[] tab = map;
-        int index = hash(key) & (tab.length - 1);
-        Node<K, V> current = tab[index];
+        if(tab == null || tab.length == 0)
+            return null;
+        int hash = hash(key);
+        int index = hash & (tab.length - 1);
+        Node<K, V> first = tab[index];
+        if(first == null)
+            return null;
+        if(first instanceof TreeNode) {
+            TreeNode<K, V> node = ((TreeNode<K, V>) first).getTreeNode(hash, key);
+            if(node != null) {
+                V oldValue = node.value;
+                node.removeTreeNode(tab);
+                size--;
+                if (mapSize > 16 && size <= mapSize / 4)
+                    reduce();
+                return oldValue;
+            }
+        }
+        Node<K, V> current = first;
         Node<K, V> previous = null;
         while (current != null) {
             if (current.key.equals(key)) {
@@ -607,6 +687,8 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(value, "Value must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return false;
         int index = hash(key) & (tab.length - 1);
         Node<K, V> previous = null;
         Node<K, V> current = tab[index];
@@ -635,6 +717,8 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(key, "Key value must not be null.");
         requireNonNull(value, "Value must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return null;
         int index = hash(key) & (tab.length - 1);
         for (Node<K, V> e = tab[index]; e != null; e = e.next)
             if (e.key.equals(key))
@@ -659,6 +743,8 @@ public class CustomMap<K, V> implements Map<K, V> {
         requireNonNull(oldValue, "Old value must not be null.");
         requireNonNull(newValue, "New value must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null || tab.length == 0)
+            return false;
         int index = hash(key) & (tab.length - 1);
         for (Node<K, V> node = tab[index]; node != null; node = node.next)
             if (node.key.equals(key) && Objects.equals(node.value, oldValue)) {
@@ -682,6 +768,8 @@ public class CustomMap<K, V> implements Map<K, V> {
     public void replaceAll(final BiFunction<? super K, ? super V, ? extends V> function) {
         requireNonNull(function, "BiFunction must not be null.");
         Node<K, V>[] tab = map;
+        if (tab == null)
+            return;
         for (Node<K, V> node : tab)
             for (Node<K, V> nodeInner = node; nodeInner != null; nodeInner = nodeInner.next)
                 nodeInner.value = function.apply(nodeInner.key, nodeInner.value);
@@ -808,8 +896,21 @@ public class CustomMap<K, V> implements Map<K, V> {
         int testMask = expanding ? oldCapacity : newCapacity;
         for (int i = 0; i < oldCapacity; ++i) {
             Node<K, V> head = oldMap[i];
-            if (head != null) {
-                oldMap[i] = null;
+            if (head != null)
+                if (!expanding) {
+                    Node<K, V> current = head;
+                    while (current != null) {
+                        Node<K, V> next = current.next;
+                        int targetIndex = current.hash & (newCapacity - 1);
+                        Node<K, V> newNode = new Node<>(current.hash, current.key, current.value, newMap[targetIndex]);
+                        newMap[targetIndex] = newNode;
+                        current = next;
+                    }
+            } else if (head.next == null)
+                newMap[head.hash & (newCapacity - 1)] = head;
+            else if (head instanceof TreeNode)
+                ((TreeNode<K, V>) head).split(newMap, i, oldCapacity);
+            else {
                 Node<K, V> lowHead = null, lowTail = null;
                 Node<K, V> highHead = null, highTail = null;
                 Node<K, V> next;
@@ -830,6 +931,7 @@ public class CustomMap<K, V> implements Map<K, V> {
                     }
                     head = next;
                 } while (head != null);
+
                 if (lowTail != null) {
                     lowTail.next = null;
                     newMap[i] = lowHead;
@@ -842,6 +944,31 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
     }
 
+    private void treeifyBin(Node<K, V>[] tab, int index) {
+        if(tab == null || tab.length < MIN_TREEIFY_CAPACITY) {
+            expand();
+            return;
+        }
+        Node<K, V> e = tab[index];
+        if(e == null)
+            return;
+        TreeNode<K, V> hd = null, tl = null;
+        do {
+            TreeNode<K, V> p = new TreeNode<>(e.hash, e.key, e.value, null);
+            if(tl == null)
+                hd = p;
+            else {
+                p.previous = tl;
+                tl.next = p;
+            }
+            tl = p;
+            e = e.next;
+        } while (e != null);
+        tab[index] = hd;
+        if(hd != null)
+            hd.treeify(tab);
+    }
+
     private final class KeySetView extends java.util.AbstractSet<K> {
 
         public void clear() {
@@ -852,7 +979,7 @@ public class CustomMap<K, V> implements Map<K, V> {
             return CustomMap.this.containsKey(o);
         }
 
-        public java.util.Iterator<K> iterator() {
+        public Iterator<K> iterator() {
             return new KeyIterator();
         }
 
@@ -919,13 +1046,13 @@ public class CustomMap<K, V> implements Map<K, V> {
      */
     private static class Node<K, V> {
 
-        private final int hash;
+        final int hash;
 
-        private final K key;
+        final K key;
 
-        private V value;
+        V value;
 
-        private Node<K, V> next;
+        Node<K, V> next;
 
         private Node(final int hash, final K key, final V value, final Node<K, V> next) {
             this.hash = hash;
@@ -972,6 +1099,468 @@ public class CustomMap<K, V> implements Map<K, V> {
 
         public int size() {
             return CustomMap.this.size();
+        }
+    }
+
+    /**
+     * An internal, mutable red-black tree node, doubling as this map's
+     * {@link Map.Entry} implementation. A {@code Node} is directly wired into
+     * the tree structure via its {@link #left}, {@link #right}, and
+     * {@link #parent} links.
+     *
+     * <p>Nodes are handed out by the entry-set iterators so that
+     * {@link #setValue(Object)} writes through to the map, as the {@link Map}
+     * contract requires. They must not be retained after the iterator has
+     * advanced, and the structural links are never exposed.
+     *
+     * @param <K> the type of the key held by this node
+     * @param <V> the type of the value held by this node
+     */
+    private static final class TreeNode<K, V> extends Node<K, V> {
+
+        TreeNode<K, V> parent;
+        TreeNode<K, V> previous;
+        TreeNode<K, V> left;
+        TreeNode<K, V> right;
+
+        private boolean RED;
+
+        private TreeNode(int hash, K key, V value, Node<K, V> next) {
+            super(hash, key, value, next);
+        }
+
+        private int compare(int h1, int h2, K k1, K k2) {
+            if (h1 != h2)
+                return h1 < h2 ? -1 : 1;
+            if (k1 instanceof Comparable) {
+                int cmp = ((Comparable<? super K>) k1).compareTo(k2);
+                if (cmp != 0)
+                    return cmp;
+            }
+            return System.identityHashCode(k1) <= System.identityHashCode(k2) ? -1 : 1;
+        }
+
+        private static <K, V> TreeNode<K, V> balanceDeletion(TreeNode<K, V> root, TreeNode<K, V> x) {
+            for (TreeNode<K, V> grandparentNode, parentLeft, parentRight; ; ) {
+                if (x == null || x == root)
+                    return root;
+                else if ((grandparentNode = x.parent) == null) {
+                    x.RED = false;
+                    return x;
+                } else if (x.RED) {
+                    x.RED = false;
+                    return root;
+                } else if ((parentLeft = grandparentNode.left) == x) {
+                    if ((parentRight = grandparentNode.right) != null && parentRight.RED) {
+                        parentRight.RED = false;
+                        grandparentNode.RED = true;
+                        root = rotateLeft(root, grandparentNode);
+                        parentRight = (grandparentNode = x.parent) == null ? null : grandparentNode.right;
+                    }
+                    if (parentRight == null)
+                        x = grandparentNode;
+                    else {
+                        TreeNode<K, V> siblingLeft = parentRight.left, siblingRight = parentRight.right;
+                        if ((siblingRight == null || !siblingRight.RED) && (siblingLeft == null || !siblingLeft.RED)) {
+                            parentRight.RED = true;
+                            x = grandparentNode;
+                        } else {
+                            if (siblingRight == null || !siblingRight.RED) {
+                                if (siblingLeft != null)
+                                    siblingLeft.RED = false;
+                                parentRight.RED = true;
+                                root = rotateRight(root, parentRight);
+                                parentRight = (grandparentNode = x.parent) == null ? null : grandparentNode.right;
+                            }
+                            if (parentRight != null) {
+                                parentRight.RED = grandparentNode != null && grandparentNode.RED;
+                                if ((siblingRight = parentRight.right) != null)
+                                    siblingRight.RED = false;
+                            }
+                            if (grandparentNode != null) {
+                                grandparentNode.RED = false;
+                                root = rotateLeft(root, grandparentNode);
+                            }
+                            x = root;
+                        }
+                    }
+                } else {
+                    if (parentLeft != null && parentLeft.RED) {
+                        parentLeft.RED = false;
+                        grandparentNode.RED = true;
+                        root = rotateRight(root, grandparentNode);
+                        parentLeft = (grandparentNode = x.parent) == null ? null : grandparentNode.left;
+                    }
+                    if (parentLeft == null)
+                        x = grandparentNode;
+                    else {
+                        TreeNode<K, V> siblingLeft = parentLeft.left, siblingRight = parentLeft.right;
+                        if ((siblingLeft == null || !siblingLeft.RED) && (siblingRight == null || !siblingRight.RED)) {
+                            parentLeft.RED = true;
+                            x = grandparentNode;
+                        } else {
+                            if (siblingLeft == null || !siblingLeft.RED) {
+                                if (siblingRight != null)
+                                    siblingRight.RED = false;
+                                parentLeft.RED = true;
+                                root = rotateLeft(root, parentLeft);
+                                parentLeft = (grandparentNode = x.parent) == null ? null : grandparentNode.left;
+                            }
+                            if (parentLeft != null) {
+                                parentLeft.RED = grandparentNode != null && grandparentNode.RED;
+                                if ((siblingLeft = parentLeft.left) != null)
+                                    siblingLeft.RED = false;
+                            }
+                            if (grandparentNode != null) {
+                                grandparentNode.RED = false;
+                                root = rotateRight(root, grandparentNode);
+                            }
+                            x = root;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static <K, V> TreeNode<K, V> balanceInsertion(TreeNode<K, V> root, TreeNode<K, V> currentNode) {
+            currentNode.RED = true;
+            for (TreeNode<K, V> parentNode, grandparentNode, grandparentLeft, grandparentRight; ; ) {
+                if ((parentNode = currentNode.parent) == null) {
+                    currentNode.RED = false;
+                    return currentNode;
+                } else if (!parentNode.RED || (grandparentNode = parentNode.parent) == null)
+                    return root;
+
+                if (parentNode == grandparentNode.left) {
+                    if ((grandparentRight = grandparentNode.right) != null && grandparentRight.RED) {
+                        grandparentRight.RED = false;
+                        parentNode.RED = false;
+                        grandparentNode.RED = true;
+                        currentNode = grandparentNode;
+                    } else {
+                        if (currentNode == parentNode.right) {
+                            root = rotateLeft(root, currentNode = parentNode);
+                            grandparentNode = (parentNode = currentNode.parent) == null ? null : parentNode.parent;
+                        }
+                        if (parentNode != null) {
+                            parentNode.RED = false;
+                            if (grandparentNode != null) {
+                                grandparentNode.RED = true;
+                                root = rotateRight(root, grandparentNode);
+                            }
+                        }
+                    }
+                } else {
+                    if ((grandparentLeft = grandparentNode.left) != null && grandparentLeft.RED) {
+                        grandparentLeft.RED = false;
+                        parentNode.RED = false;
+                        grandparentNode.RED = true;
+                        currentNode = grandparentNode;
+                    } else {
+                        if (currentNode == parentNode.left) {
+                            root = rotateRight(root, currentNode = parentNode);
+                            grandparentNode = (parentNode = currentNode.parent) == null ? null : parentNode.parent;
+                        }
+                        if (parentNode != null) {
+                            parentNode.RED = false;
+                            if (grandparentNode != null) {
+                                grandparentNode.RED = true;
+                                root = rotateLeft(root, grandparentNode);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private TreeNode<K, V> find(final int hash, final Object o) {
+            TreeNode<K, V> p = this;
+            do {
+                int ph = p.hash;
+                K pk = p.key;
+                if (ph > hash)
+                    p = p.left;
+                else if (ph < hash)
+                    p = p.right;
+                else if (Objects.equals(o, pk))
+                    return p;
+                else {
+                    int dir = compare(hash, ph, (K) o, pk);
+                    p = (dir < 0) ? p.left : p.right;
+                }
+            } while (p != null);
+            return null;
+        }
+
+        private TreeNode<K, V> getTreeNode(final int hash, final Object o) {
+            return ((parent != null) ? root() : this).find(hash, o);
+        }
+
+        private static <K, V> void moveRootToFront(Node<K, V>[] tab, TreeNode<K, V> root) {
+            int n;
+            if (root != null && tab != null && (n = tab.length) > 0) {
+                int index = (n - 1) & root.hash;
+                TreeNode<K, V> first = (TreeNode<K, V>) tab[index];
+                if (root != first) {
+                    Node<K, V> rn;
+                    tab[index] = root;
+                    TreeNode<K, V> rp = root.previous;
+                    if ((rn = root.next) != null)
+                        ((TreeNode<K, V>) rn).previous = rp;
+                    if (rp != null)
+                        rp.next = rn;
+                    if (first != null)
+                        first.previous = root;
+                    root.next = first;
+                    root.previous = null;
+                }
+            }
+        }
+
+        private TreeNode<K, V> putTreeVal(Node<K, V>[] tab, int h, K k, V v) {
+            TreeNode<K, V> root = (parent != null) ? root() : this;
+            for (TreeNode<K, V> p = root; ; ) {
+                int dir;
+                int ph = p.hash;
+                K pk = p.key;
+                if (ph > h)
+                    dir = -1;
+                else if (ph < h)
+                    dir = 1;
+                else if (pk == k || (k.equals(pk)))
+                    return p;
+                else
+                    dir = compare(h, ph, k, pk);
+                TreeNode<K, V> xp = p;
+                if ((p = (dir <= 0) ? p.left : p.right) == null) {
+                    Node<K, V> xpn = xp.next;
+                    TreeNode<K, V> x = new TreeNode<>(h, k, v, xpn);
+                    if (dir <= 0)
+                        xp.left = x;
+                    else
+                        xp.right = x;
+                    xp.next = x;
+                    x.parent = x.previous = xp;
+                    if (xpn != null)
+                        ((TreeNode<K, V>) xpn).previous = x;
+                    moveRootToFront(tab, balanceInsertion(root, x));
+                    return null;
+                }
+            }
+        }
+
+        private void removeTreeNode(Node<K, V>[] tab) {
+            int n;
+            if (tab == null || (n = tab.length) == 0)
+                return;
+            int index = (n - 1) & hash;
+            TreeNode<K, V> first = (TreeNode<K, V>) tab[index];
+            TreeNode<K, V> root = first;
+            TreeNode<K, V> rl;
+            TreeNode<K, V> successor = (TreeNode<K, V>) next;
+            TreeNode<K, V> predecessor = previous;
+            if (predecessor == null)
+                tab[index] = first = successor;
+            else
+                predecessor.next = successor;
+            if (successor != null)
+                successor.previous = predecessor;
+            if (first == null)
+                return;
+            if (root.parent != null)
+                root = root.root();
+            if (root == null || ((root.right == null || (rl = root.left) == null || rl.left == null))) {
+                tab[index] = first.untreeify();
+                return;
+            }
+            TreeNode<K, V> p = this, pl = left, pr = right, replacement;
+            if (pl != null && pr != null) {
+                TreeNode<K, V> s = pr, sl;
+                while ((sl = s.left) != null)
+                    s = sl;
+                boolean c = s.RED;
+                s.RED = p.RED;
+                p.RED = c;
+                TreeNode<K, V> sr = s.right;
+                TreeNode<K, V> pp = p.parent;
+                if (s == pr) {
+                    p.parent = s;
+                    s.right = p;
+                } else {
+                    TreeNode<K, V> sp = s.parent;
+                    if ((p.parent = sp) != null)
+                        if (s == sp.left)
+                            sp.left = p;
+                        else
+                            sp.right = p;
+                    if ((s.right = pr) != null)
+                        pr.parent = s;
+                }
+                p.left = null;
+                if ((p.right = sr) != null)
+                    sr.parent = p;
+                if ((s.left = pl) != null)
+                    pl.parent = s;
+                if ((s.parent = pp) == null)
+                    root = s;
+                else if (p == pp.left)
+                    pp.left = s;
+                else
+                    pp.right = s;
+                replacement = sr;
+            } else
+                replacement = Objects.requireNonNullElseGet(pl, () -> Objects.requireNonNullElse(pr, p));
+
+            if (replacement != p) {
+                TreeNode<K, V> pp = replacement.parent = p.parent;
+                if (pp == null)
+                    root = replacement;
+                else if (p == pp.left)
+                    pp.left = replacement;
+                else
+                    pp.right = replacement;
+                p.left = p.right = p.parent = null;
+            }
+
+            TreeNode<K, V> r = p.RED ? root : balanceDeletion(root, replacement);
+
+            if (replacement == p) {
+                TreeNode<K, V> pp = p.parent;
+                p.parent = null;
+                if (pp != null)
+                    if (p == pp.left)
+                        pp.left = null;
+                    else if (p == pp.right)
+                        pp.right = null;
+            }
+            moveRootToFront(tab, r);
+        }
+
+        private TreeNode<K, V> root() {
+            for (TreeNode<K, V> r = this, p; ; ) {
+                if ((p = r.parent) == null)
+                    return r;
+                r = p;
+            }
+        }
+
+        private static <K, V> TreeNode<K, V> rotateLeft(TreeNode<K, V> root, final TreeNode<K, V> p) {
+            TreeNode<K, V> r = p.right;
+            p.right = r.left;
+            if (r.left != null)
+                r.left.parent = p;
+            r.parent = p.parent;
+            if (p.parent == null)
+                root = r;
+            else if (p.parent.left == p)
+                p.parent.left = r;
+            else
+                p.parent.right = r;
+            r.left = p;
+            p.parent = r;
+            return root;
+        }
+
+        private static <K, V> TreeNode<K, V> rotateRight(TreeNode<K, V> root, final TreeNode<K, V> p) {
+            TreeNode<K, V> l = p.left;
+            p.left = l.right;
+            if (l.right != null)
+                l.right.parent = p;
+            l.parent = p.parent;
+            if (p.parent == null)
+                root = l;
+            else if (p.parent.right == p)
+                p.parent.right = l;
+            else
+                p.parent.left = l;
+            l.right = p;
+            p.parent = l;
+            return root;
+        }
+
+        private void split(Node<K, V>[] tab, int index, int bit) {
+            TreeNode<K, V> b = this;
+            TreeNode<K, V> loHead = null, loTail = null;
+            TreeNode<K, V> hiHead = null, hiTail = null;
+            int lc = 0, hc = 0;
+
+            for (TreeNode<K, V> e = b, next; e != null; e = next) {
+                next = (TreeNode<K, V>) e.next;
+                e.next = null;
+                if ((e.hash & bit) == 0) {
+                    if ((e.previous = loTail) == null)
+                        loHead = e;
+                    else
+                        loTail.next = e;
+                    loTail = e;
+                    ++lc;
+                } else {
+                    if ((e.previous = hiTail) == null)
+                        hiHead = e;
+                    else
+                        hiTail.next = e;
+                    hiTail = e;
+                    ++hc;
+                }
+            }
+
+            if (loHead != null)
+                if (lc <= UNTREEIFY_THRESHOLD)
+                    tab[index] = loHead.untreeify();
+                else {
+                    tab[index] = loHead;
+                    if (hiHead != null)
+                        loHead.treeify(tab);
+                }
+            if (hiHead != null)
+                if (hc <= UNTREEIFY_THRESHOLD)
+                    tab[index + bit] = hiHead.untreeify();
+                else {
+                    tab[index + bit] = hiHead;
+                    if (loHead != null)
+                        hiHead.treeify(tab);
+                }
+        }
+
+        private void treeify(Node<K, V>[] tab) {
+            TreeNode<K, V> root = null;
+            for (TreeNode<K, V> x = this, next; x != null; x = next) {
+                next = (TreeNode<K, V>) x.next;
+                x.left = x.right = null;
+                if (root == null) {
+                    x.parent = null;
+                    x.RED = false;
+                    root = x;
+                } else {
+                    for (TreeNode<K, V> p = root; ; ) {
+                        int dir = compare(x.hash, p.hash, x.key, p.key);
+                        TreeNode<K, V> xp = p;
+                        if ((p = (dir <= 0) ? p.left : p.right) == null) {
+                            x.parent = xp;
+                            if (dir <= 0)
+                                xp.left = x;
+                            else
+                                xp.right = x;
+                            root = balanceInsertion(root, x);
+                            break;
+                        }
+                    }
+                }
+            }
+            moveRootToFront(tab, root);
+        }
+
+        Node<K, V> untreeify() {
+            Node<K, V> hd = null, tl = null;
+            for (Node<K, V> q = this; q != null; q = q.next) {
+                Node<K, V> p = new Node<>(q.hash, q.key, q.value, null);
+                if (tl == null)
+                    hd = p;
+                else
+                    tl.next = p;
+                tl = p;
+            }
+            return hd;
         }
     }
 

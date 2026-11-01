@@ -82,61 +82,63 @@ All methods implemented are identical to those found in the Java [Map](https://d
 - **$m_{\text{src}}$**: Number of buckets in the source/input map.
 - **$n_{\text{src}}$**: Number of entries in the source/input map.
 
-# Performance vs Java HashMap
+## Performance vs Java HashMap
 
 | Method                           | Custom (ns) | JDK (ns)  | Ratio  |            Winner            |
-|:---------------------------------|:------------|:----------|:------:|:----------------------------:|
-| `clear()`                        | 73,914      | 74,345    | ~1.01× | **Statistically Equivalent** |
-| `compute(K,BiFunction)`          | 684         | 502       | 1.36×  |           **JDK**            |
-| `computeIfAbsent(K,Function)`    | 406         | 376       | ~1.08× | **Statistically Equivalent** |
-| `computeIfPresent(K,BiFunction)` | 762         | 1,050     | 1.38×  |          **Custom**          |
-| `constructor`                    | 164         | 92        | 1.79×  |           **JDK**            |
-| `containsKey(K)`                 | 300         | 415       | 1.38×  |          **Custom**          |
-| `containsValue(V)`               | 136,738     | 119,654   | 1.14×  | **Statistically Equivalent** |
-| `entrySet()`                     | 160         | 59        | 2.70×  |           **JDK**            |
-| `equals(Object o)`               | 2,375,475   | 2,635,382 | ~1.11× | **Statistically Equivalent** |
-| `forEach(BiConsumer)`            | 258,654     | 254,474   | ~1.02× | **Statistically Equivalent** |
-| `get(K)`                         | 357         | 335       | ~1.07× | **Statistically Equivalent** |
-| `getOrDefault(K,V)`              | 750         | 463       | 1.62×  |           **JDK**            |
-| `hashCode()`                     | 693,495     | 615,993   | ~1.13× | **Statistically Equivalent** |
-| `keySet()`                       | 124         | 84        | 1.47×  |           **JDK**            |
-| `merge(K,V,BiFunction)`          | 582         | 1,411     | 2.43×  |          **Custom**          |
-| `put(K,V)`                       | 4,318,986   | 4,469,980 | ~1.03× | **Statistically Equivalent** |
-| `putAll(Map)`                    | 1,059,655   | 1,000,072 | ~1.06× | **Statistically Equivalent** |
-| `putIfAbsent(K,V)`               | 4,925,956   | 3,887,748 | 1.27×  |           **JDK**            |
-| `remove(K)`                      | 400         | 336       | 1.19×  |           **JDK**            |
-| `remove(K,V)`                    | 417         | 472       | ~1.13× | **Statistically Equivalent** |
-| `replace(K,V)`                   | 435         | 445       | ~1.02× | **Statistically Equivalent** |
-| `replace(K,V,V)`                 | 913         | 826       | ~1.11× | **Statistically Equivalent** |
-| `replaceAll(BiFunction)`         | 1,150,468   | 1,213,617 | ~1.05× | **Statistically Equivalent** |
-| `toString()`                     | 3,437,562   | 1,995,256 | 1.72×  |           **JDK**            |
-| `values()`                       | 80          | 87        | ~1.09× | **Statistically Equivalent** |
+|:---------------------------------|:------------|:----------|:-------|:----------------------------:|
+| `clear()`                        | 30,619      | 28,129    | ~1.09× | **Statistically Equivalent** |
+| `compute(K,BiFunction)`          | 504         | 360       | 1.40×  |           **JDK**            |
+| `computeIfAbsent(K,Function)`    | 321         | 272       | 1.18×  |           **JDK**            |
+| `computeIfPresent(K,BiFunction)` | 412         | 514       | 1.25×  |          **Custom**          |
+| `constructor`                    | 108         | 59        | 1.83×  |           **JDK**            |
+| `containsKey(K)`                 | 225         | 182       | 1.23×  |           **JDK**            |
+| `containsValue(V)`               | 70,223      | 62,126    | ~1.13× | **Statistically Equivalent** |
+| `entrySet()`                     | 120         | 65        | 1.85×  |           **JDK**            |
+| `equals(Object o)`               | 1,267,376   | 1,354,022 | ~1.07× | **Statistically Equivalent** |
+| `forEach(BiConsumer)`            | 139,240     | 119,667   | 1.16×  |           **JDK**            |
+| `get(K)`                         | 248         | 180       | 1.38×  |           **JDK**            |
+| `getOrDefault(K,V)`              | 432         | 182       | 2.37×  |           **JDK**            |
+| `hashCode()`                     | 386,937     | 340,276   | ~1.14× | **Statistically Equivalent** |
+| `keySet()`                       | 71          | 65        | ~1.09× | **Statistically Equivalent** |
+| `merge(K,V,BiFunction)`          | 428         | 374       | ~1.14× | **Statistically Equivalent** |
+| `put(K,V)`                       | 2,604,798   | 2,220,185 | 1.17×  |           **JDK**            |
+| `putAll(Map)`                    | 558,742     | 467,844   | 1.19×  |           **JDK**            |
+| `putIfAbsent(K,V)`               | 2,830,453   | 2,157,884 | 1.31×  |           **JDK**            |
+| `remove(K)`                      | 261         | 192       | 1.36×  |           **JDK**            |
+| `remove(K,V)`                    | 442         | 306       | 1.45×  |           **JDK**            |
+| `replace(K,V)`                   | 430         | 310       | 1.39×  |           **JDK**            |
+| `replace(K,V,V)`                 | 588         | 382       | 1.54×  |           **JDK**            |
+| `replaceAll(BiFunction)`         | 598,839     | 624,791   | ~1.04× | **Statistically Equivalent** |
+| `toString()`                     | 1,803,156   | 1,099,288 | 1.64×  |           **JDK**            |
+| `values()`                       | 98          | 61        | 1.60×  |           **JDK**            |
+
+## Performance Charts 
 
 #### Note: The following performance charts are designed to be viewed in dark mode.
 ![Combined Performance Charts](PerformanceTesting/heatmap.png)
 ![Combined Performance Charts](PerformanceTesting/geometric.png)
-![Combined Performance Charts](PerformanceTesting/constructor.png)
-![Combined Performance Charts](PerformanceTesting/clear().png)
-![Combined Performance Charts](PerformanceTesting/compute(K,BiFunction).png)
-![Combined Performance Charts](PerformanceTesting/computeIfAbsent(K,Function).png)
-![Combined Performance Charts](PerformanceTesting/computeIfPresent(K,BiFunction).png)
-![Combined Performance Charts](PerformanceTesting/containsKey(K).png)
-![Combined Performance Charts](PerformanceTesting/containsValue(V).png)
-![Combined Performance Charts](PerformanceTesting/entrySet().png)
-![Combined Performance Charts](PerformanceTesting/equals(Object%20o).png)
-![Combined Performance Charts](PerformanceTesting/forEach(BiConsumer).png)
-![Combined Performance Charts](PerformanceTesting/get(K).png)
-![Combined Performance Charts](PerformanceTesting/getOrDefault(K,V).png)
-![Combined Performance Charts](PerformanceTesting/hashCode().png)
-![Combined Performance Charts](PerformanceTesting/keySet().png)
-![Combined Performance Charts](PerformanceTesting/merge(K,V,BiFunction).png)
-![Combined Performance Charts](PerformanceTesting/put(K,V).png)
-![Combined Performance Charts](PerformanceTesting/putAll(Map).png)
-![Combined Performance Charts](PerformanceTesting/putIfAbsent(K,V).png)
-![Combined Performance Charts](PerformanceTesting/remove(K).png)
-![Combined Performance Charts](PerformanceTesting/remove(K,V).png)
-![Combined Performance Charts](PerformanceTesting/replace(K,V).png)
-![Combined Performance Charts](PerformanceTesting/replace(K,V,V).png)
-![Combined Performance Charts](PerformanceTesting/replaceAll(BiFunction).png)
-![Combined Performance Charts](PerformanceTesting/toString().png)
-![Combined Performance Charts](PerformanceTesting/values().png)
+![Combined Performance Charts](PerformanceTesting/Constructor.png)
+![Combined Performance Charts](PerformanceTesting/clear.png)
+![Combined Performance Charts](PerformanceTesting/compute.png)
+![Combined Performance Charts](PerformanceTesting/computeIfAbsent.png)
+![Combined Performance Charts](PerformanceTesting/computeIfPresent.png)
+![Combined Performance Charts](PerformanceTesting/containsKey.png)
+![Combined Performance Charts](PerformanceTesting/containsValue.png)
+![Combined Performance Charts](PerformanceTesting/entrySet.png)
+![Combined Performance Charts](PerformanceTesting/equals.png)
+![Combined Performance Charts](PerformanceTesting/forEach.png)
+![Combined Performance Charts](PerformanceTesting/get.png)
+![Combined Performance Charts](PerformanceTesting/getOrDefault.png)
+![Combined Performance Charts](PerformanceTesting/hashCode.png)
+![Combined Performance Charts](PerformanceTesting/keySet.png)
+![Combined Performance Charts](PerformanceTesting/merge.png)
+![Combined Performance Charts](PerformanceTesting/put.png)
+![Combined Performance Charts](PerformanceTesting/putAll.png)
+![Combined Performance Charts](PerformanceTesting/putIfAbsent.png)
+![Combined Performance Charts](PerformanceTesting/remove.png)
+![Combined Performance Charts](PerformanceTesting/removeObject_Object.png)
+![Combined Performance Charts](PerformanceTesting/replace.png)
+![Combined Performance Charts](PerformanceTesting/replaceK_V_V.png)
+![Combined Performance Charts](PerformanceTesting/replaceAll.png)
+![Combined Performance Charts](PerformanceTesting/toString.png)
+![Combined Performance Charts](PerformanceTesting/values.png)

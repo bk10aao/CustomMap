@@ -1032,4 +1032,194 @@ class CustomMapTest {
             assertEquals("TestValue_" + i, customMap.get(i));
         }
     }
+
+    @Test
+    void testTreeificationAndTreeNodeOperations() {
+        class CollidingKey implements Comparable<CollidingKey> {
+            private final int id;
+
+            CollidingKey(int id) {
+                this.id = id;
+            }
+
+            @Override
+            public int hashCode() {
+                return 42;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (!(o instanceof CollidingKey)) return false;
+                return this.id == ((CollidingKey) o).id;
+            }
+
+            @Override
+            public int compareTo(CollidingKey o) {
+                return Integer.compare(this.id, o.id);
+            }
+        }
+
+        CustomMap<CollidingKey, String> map = new CustomMap<>(64);
+
+        for (int i = 0; i < 20; i++) {
+            map.put(new CollidingKey(i), "Value_" + i);
+        }
+
+        assertEquals(20, map.size());
+        for (int i = 0; i < 20; i++) {
+            assertEquals("Value_" + i, map.get(new CollidingKey(i)));
+            assertTrue(map.containsKey(new CollidingKey(i)));
+        }
+
+        map.put(new CollidingKey(5), "Updated_5");
+        assertEquals("Updated_5", map.get(new CollidingKey(5)));
+
+        for (int i = 0; i < 15; i++) {
+            String expected = (i == 5) ? "Updated_5" : ("Value_" + i);
+            assertEquals(expected, map.remove(new CollidingKey(i)));
+        }
+
+        assertEquals(5, map.size());
+        assertNull(map.get(new CollidingKey(5)));
+        assertEquals("Value_15", map.get(new CollidingKey(15)));
+    }
+
+    @Test
+    void testTreeNodeDeepBalanceAndUntreeification() {
+        class HeavyCollidingKey implements Comparable<HeavyCollidingKey> {
+            private final int id;
+
+            HeavyCollidingKey(int id) {
+                this.id = id;
+            }
+
+            @Override
+            public int hashCode() {
+                return 100;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (!(o instanceof HeavyCollidingKey)) return false;
+                return this.id == ((HeavyCollidingKey) o).id;
+            }
+
+            @Override
+            public int compareTo(HeavyCollidingKey o) {
+                return Integer.compare(this.id, o.id);
+            }
+        }
+
+        CustomMap<HeavyCollidingKey, String> map = new CustomMap<>(64);
+
+        for (int i = 0; i < 40; i++) {
+            map.put(new HeavyCollidingKey(i), "Val_" + i);
+        }
+        assertEquals(40, map.size());
+
+        for (int i = 0; i < 35; i++) {
+            assertEquals("Val_" + i, map.remove(new HeavyCollidingKey(i)));
+        }
+
+        assertEquals(5, map.size());
+
+        for (int i = 35; i < 40; i++) {
+            assertEquals("Val_" + i, map.get(new HeavyCollidingKey(i)));
+        }
+    }
+
+    @Test
+    void testTreeNodeSplitDuringExpansion() {
+        class SplitCollidingKey implements Comparable<SplitCollidingKey> {
+            private final int id;
+            private final int hashVal;
+
+            SplitCollidingKey(int id, int hashVal) {
+                this.id = id;
+                this.hashVal = hashVal;
+            }
+
+            @Override
+            public int hashCode() {
+                return hashVal;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (!(o instanceof SplitCollidingKey)) return false;
+                return this.id == ((SplitCollidingKey) o).id;
+            }
+
+            @Override
+            public int compareTo(SplitCollidingKey o) {
+                return Integer.compare(this.id, o.id);
+            }
+        }
+
+        CustomMap<SplitCollidingKey, String> map = new CustomMap<>(16);
+
+        for (int i = 0; i < 20; i++) {
+            int hash = (i % 2 == 0) ? 5 : (5 | 16);
+            map.put(new SplitCollidingKey(i, hash), "Data_" + i);
+        }
+
+        assertEquals(20, map.size());
+    }
+
+    @Test
+    void testTreeNodeDeletionScenarios() {
+        class DeleteCollidingKey implements Comparable<DeleteCollidingKey> {
+            private final int id;
+
+            DeleteCollidingKey(int id) {
+                this.id = id;
+            }
+
+            @Override
+            public int hashCode() {
+                return 99;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (!(o instanceof DeleteCollidingKey)) return false;
+                return this.id == ((DeleteCollidingKey) o).id;
+            }
+
+            @Override
+            public int compareTo(DeleteCollidingKey o) {
+                return Integer.compare(this.id, o.id);
+            }
+        }
+
+        CustomMap<DeleteCollidingKey, String> map = new CustomMap<>(64);
+
+        for (int i = 0; i < 15; i++) {
+            map.put(new DeleteCollidingKey(i), "Val_" + i);
+        }
+        assertEquals(15, map.size());
+
+        assertNull(map.remove(new DeleteCollidingKey(999)));
+        assertEquals(15, map.size());
+
+        for (int i = 0; i < 15; i += 2) {
+            assertEquals("Val_" + i, map.remove(new DeleteCollidingKey(i)));
+        }
+
+        for (int i = 1; i < 15; i += 2) {
+            assertEquals("Val_" + i, map.get(new DeleteCollidingKey(i)));
+        }
+
+        for (int i = 1; i < 15; i += 2) {
+            assertEquals("Val_" + i, map.remove(new DeleteCollidingKey(i)));
+        }
+
+        assertTrue(map.isEmpty());
+        assertEquals(0, map.size());
+        assertNull(map.get(new DeleteCollidingKey(5)));
+    }
 }

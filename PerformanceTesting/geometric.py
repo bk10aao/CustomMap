@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 
-# Load CSV files with semicolon delimiter
-custom_df = pd.read_csv('CustomMap_jmh_performance.csv', sep=';')
-jdk_df = pd.read_csv('HashMap_jmh_performance.csv', sep=';')
+# Load wide-matrix CSV files with semicolon delimiter
+custom_df = pd.read_csv('CustomMap_wide_matrix.csv', sep=';')
+jdk_df = pd.read_csv('HashMap_wide_matrix.csv', sep=';')
 
 common_sizes = set(custom_df['Size']).intersection(set(jdk_df['Size']))
 custom_df = (
@@ -19,13 +19,13 @@ jdk_df = (
     .reset_index(drop=True)
 )
 
-methods = [col for col in custom_df.columns if col != 'Size']
+methods = [col for col in custom_df.columns if col != 'Size' and col in jdk_df.columns]
 
 custom_df_fixed = custom_df.copy()
 jdk_df_fixed = jdk_df.copy()
 for col in methods:
-  custom_df_fixed[col] = custom_df_fixed[col].replace(0, 1)
-  jdk_df_fixed[col] = jdk_df_fixed[col].replace(0, 1)
+  custom_df_fixed[col] = pd.to_numeric(custom_df_fixed[col], errors='coerce').fillna(1).replace(0, 1)
+  jdk_df_fixed[col] = pd.to_numeric(jdk_df_fixed[col], errors='coerce').fillna(1).replace(0, 1)
 
 ratios = []
 labels = []
