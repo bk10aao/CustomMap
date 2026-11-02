@@ -18,10 +18,11 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A hash table-based implementation of the {@link Map} interface, using an array
- * to handle collisions via chaining. This map does not permit null keys and enforces type constraints
- * on keys and values using the provided {@code Class<K>} and {@code Class<V>}. Null values are permitted
- * in some operations (e.g., {@code put}) but not others (e.g., {@code replace}). The map resizes
- * automatically based on a load factor of 0.75, using power-of-two capacity sizing and bitwise masking.
+ * to handle collisions via chaining and Red-Black tree bins for high-collision performance.
+ * This map does not permit null keys (throwing {@link NullPointerException}) and
+ * supports null values in standard insertions while enforcing non-null constraints on
+ * specific modifier operations (e.g., {@code replace}). The map resizes automatically
+ * based on a load factor of 0.75, using power-of-two capacity sizing and bitwise masking.
  * <p>
  * This implementation is not synchronized and does not guarantee detection of concurrent modifications.
  * Methods like {@code compute} and {@code forEach} may produce undefined behavior if the map is modified
@@ -119,8 +120,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param remappingFunction the function to compute the new value
      * @return the new value associated with the key, or {@code null} if none
      * @throws NullPointerException if the key or remappingFunction is null
-     * @throws IllegalArgumentException if the key or computed value is not an instance of the key or value
-     *         type specified at construction
      */
     public V compute(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         requireNonNull(key, "Key value must not be null.");
@@ -204,8 +203,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param mappingFunction the function to compute a value
      * @return the current (existing or computed) value associated with the key, or {@code null} if none
      * @throws NullPointerException if the key or mappingFunction is null
-     * @throws IllegalArgumentException if the key or computed value is not an instance of the key or value
-     *         type specified at construction
      */
     public V computeIfAbsent(final K key, final Function<? super K, ? extends V> mappingFunction) {
         requireNonNull(key, "Key must not be null.");
@@ -254,8 +251,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param remappingFunction the function to compute a new value
      * @return the new value associated with the key, or {@code null} if none
      * @throws NullPointerException if the key or remappingFunction is null
-     * @throws IllegalArgumentException if the key or computed value is not an instance of the key or value
-     *         type specified at construction
      */
     public V computeIfPresent(final K key, final BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         requireNonNull(key, "Key value must not be null.");
@@ -352,14 +347,12 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     /**
-     * Returns a new {@link Set} containing all key-value mappings in this map. The set contains
-     * {@link java.util.Map.Entry} objects and is not backed by the map, so changes to the set do not
-     * affect the map, and vice versa.
-     * The set contains {@link SimpleEntry} objects
+     * Returns a {@link Set} view of the key-value mappings contained in this map.
+     * The set is backed by the map, so changes to the map affect the set, and vice versa.
      *
-     * @return a new set containing all key-value mappings in this map
+     * @return a set view of the mappings contained in this map
      */
-    public Set<Map.Entry<K, V>> entrySet() {
+    public Set<Entry<K, V>> entrySet() {
         return new EntrySetView();
     }
 
@@ -437,7 +430,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @return the value to which the specified key is mapped, or
      *         {@code null} if this map contains no mapping for the key
      * @throws NullPointerException if the specified key is null
-     * @throws ClassCastException if the key is not an instance of the key type specified at construction
      */
     public V get(final Object key) {
         return getOrDefault(key, null);
@@ -451,7 +443,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param defaultValue the value to return if no mapping exists
      * @return the value associated with the key, or {@code defaultValue} if none
      * @throws NullPointerException if the key is null
-     * @throws ClassCastException if the key is not an instance of the key type specified at construction
      */
     public V getOrDefault(final Object key, final V defaultValue) {
         requireNonNull(key, "Key value must not be null.");
@@ -531,8 +522,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param remappingFunction the function to compute a new value if the key is mapped
      * @return the new value associated with the key, or {@code null} if none
      * @throws NullPointerException if the key, value, or remappingFunction is null
-     * @throws IllegalArgumentException if the key, value, or computed value is not an instance of the
-     *         key or value type specified at construction
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public V merge(final K key, final V value, final BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
@@ -666,15 +655,13 @@ public class CustomMap<K, V> implements Map<K, V> {
      *
      * @param m mappings to be stored in this map
      * @throws NullPointerException if the specified map or any of its keys are null
-     * @throws IllegalArgumentException if any key or value is not an instance of the key or value type
-     *         specified at construction
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public void putAll(final Map<? extends K, ? extends V> m) {
         int mSize = m.size();
         if (mSize == 0)
             return;
-        for (Map.Entry<? extends K, ? extends V> entry : m.entrySet()) {
+        for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
             requireNonNull(entry.getKey(), "Key value must not be null.");
             put(entry.getKey(), entry.getValue());
         }
@@ -689,8 +676,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param value the value to be associated with the key
      * @return the current value associated with the key, or {@code null} if none
      * @throws NullPointerException if the key or value is null
-     * @throws IllegalArgumentException if the key or value is not an instance of the key or value type
-     *         specified at construction
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public V putIfAbsent(final K key, final V value) {
@@ -742,7 +727,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param key the key whose mapping is to be removed
      * @return the previous value associated with the key, or {@code null} if none
      * @throws NullPointerException if the key is null
-     * @throws ClassCastException if the key is not an instance of the key type specified at construction
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public V remove(final Object key) {
@@ -792,7 +776,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param value the value expected to be associated with the key
      * @return {@code true} if the mapping was removed, {@code false} otherwise
      * @throws NullPointerException if the key or value is null
-     * @throws ClassCastException if the key is not an instance of the key type specified at construction
      * (<a href="{@docRoot}/java.base/java/util/Map.html#optional-restrictions">optional</a>)
      */
     public boolean remove(final Object key, final Object value) {
@@ -838,8 +821,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param value the new value to associate with the key
      * @return the previous value associated with the key, or {@code null} if none
      * @throws NullPointerException if the key or value is null
-     * @throws IllegalArgumentException if the key or value is not an instance of the key or value type
-     *         specified at construction
      */
     public V replace(final K key, final V value) {
         requireNonNull(key, "Key value must not be null.");
@@ -863,8 +844,6 @@ public class CustomMap<K, V> implements Map<K, V> {
      * @param newValue the new value to associate with the key
      * @return {@code true} if the value was replaced, {@code false} otherwise
      * @throws NullPointerException if the key, oldValue, or newValue is null
-     * @throws IllegalArgumentException if the key or newValue is not an instance of the key or value type
-     *         specified at construction
      */
     public boolean replace(final K key, final V oldValue, final V newValue) {
         requireNonNull(key, "Key value must not be null.");
@@ -889,9 +868,7 @@ public class CustomMap<K, V> implements Map<K, V> {
      * modifications.
      *
      * @param function the function to compute new values, taking a key and current value
-     * @throws IllegalArgumentException if the function is null
-     * @throws IllegalArgumentException if any computed value (if non-null) is not an instance of the
-     *         value type specified at construction
+     * @throws NullPointerException if the function is null
      */
     public void replaceAll(final BiFunction<? super K, ? super V, ? extends V> function) {
         requireNonNull(function, "BiFunction must not be null.");
@@ -946,6 +923,15 @@ public class CustomMap<K, V> implements Map<K, V> {
         return new ValuesView();
     }
 
+    /**
+     * Doubles the capacity of this map's internal table when the threshold is exceeded.
+     * If the current capacity has already reached {@link #MAXIMUM_CAPACITY}, table expansion
+     * is suppressed, and capacity remains capped.
+     * <p>
+     * This method allocates a new node array of double the previous size, delegates
+     * existing entries and Red-Black tree bins to the new table via {@link #transfer(Node[], Node[], int)},
+     * and updates the internal reference and capacity threshold accordingly.
+     */
     private void expand() {
         Node<K, V>[] tab = map;
         int oldCapacity = tab.length;
@@ -971,6 +957,16 @@ public class CustomMap<K, V> implements Map<K, V> {
         return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
     }
 
+    /**
+     * Halves the capacity of this map's internal table when occupancy falls significantly low.
+     * Shrinking occurs only if the current capacity exceeds the minimum threshold of 16 and
+     * the number of mappings is less than or equal to one-quarter of the current capacity
+     * ({@code size <= mapSize / 4}).
+     * <p>
+     * This method allocates a new node array of half the previous size (floored at 16),
+     * transfers existing entries and Red-Black tree bins to the new table via
+     * {@link #transfer(Node[], Node[], int)}, and updates the internal reference and capacity threshold accordingly.
+     */
     private void reduce() {
         Node<K, V>[] tab = map;
         if (mapSize <= 16 || size > mapSize / 4)
@@ -1017,6 +1013,19 @@ public class CustomMap<K, V> implements Map<K, V> {
         return true;
     }
 
+    /**
+     * Transfers all nodes and tree bins from the old hash table to the new resized table.
+     * <p>
+     * During an expansion, nodes in each bucket are either kept at their original index
+     * or relocated to {@code index + oldCapacity} based on bitwise masking. Single nodes are
+     * placed directly, linked lists are split into low and high sublists, and Red-Black tree bins
+     * are partitioned via {@link TreeNode#split}. During a reduction, entries are rehashed and
+     * reinserted into the smaller table.
+     *
+     * @param oldMap      the previous internal table array being resized
+     * @param newMap      the newly allocated target table array
+     * @param newCapacity the capacity of the new table (must be a power of two)
+     */
     private void transfer(final Node<K, V>[] oldMap, final Node<K, V>[] newMap, final int newCapacity) {
         int oldCapacity = oldMap.length;
         boolean expanding = newCapacity > oldCapacity;
@@ -1071,6 +1080,17 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
     }
 
+    /**
+     * Replaces the linked list of nodes in the specified bucket with a balanced Red-Black tree.
+     * <p>
+     * If the table capacity is less than {@link #MIN_TREEIFY_CAPACITY}, table expansion
+     * is triggered via {@link #expand()} instead of treeifying the bin. Otherwise,
+     * the traditional linked-list nodes are converted into doubly-linked {@link TreeNode}
+     * instances, and the tree structure is balanced using {@link TreeNode#treeify(Node[])}.
+     *
+     * @param tab   the hash table array containing the bin
+     * @param index the index of the bucket to be treeified
+     */
     private void treeifyBin(final Node<K, V>[] tab, final int index) {
         if (tab == null || tab.length < MIN_TREEIFY_CAPACITY) {
             expand();
@@ -1096,45 +1116,94 @@ public class CustomMap<K, V> implements Map<K, V> {
             hd.treeify(tab);
     }
 
-    private final class KeySetView extends java.util.AbstractSet<K> {
+    private final class KeySetView extends AbstractSet<K> {
 
+        /**
+         * Removes all mappings from the backing {@code CustomMap}, leaving the key set empty.
+         */
         public void clear() {
             CustomMap.this.clear();
         }
 
+        /**
+         * Returns {@code true} if this set contains the specified element.
+         *
+         * @param o element whose presence in this key set is to be tested
+         * @return {@code true} if the specified element is present as a key, {@code false} otherwise
+         * @throws NullPointerException if the specified element is null
+         */
         public boolean contains(final Object o) {
             return CustomMap.this.containsKey(o);
         }
 
+        /**
+         * Returns an iterator over the elements in this key set.
+         *
+         * @return an iterator over the map's keys
+         */
         public Iterator<K> iterator() {
             return new KeyIterator();
         }
 
+        /**
+         * Removes the specified element from this set if it is present, effectively
+         * removing the corresponding mapping from the backing {@code CustomMap}.
+         *
+         * @param o object to be removed from this set, if present
+         * @return {@code true} if the set contained the specified element and it was removed
+         * @throws NullPointerException if the specified key is null
+         */
         public boolean remove(final Object o) {
             int oldSize = CustomMap.this.size;
             CustomMap.this.remove(o);
             return CustomMap.this.size < oldSize;
         }
 
+        /**
+         * Returns the number of elements (keys) in this set.
+         *
+         * @return the number of key mappings in the map
+         */
         public int size() {
             return CustomMap.this.size();
         }
     }
 
-    private final class KeyIterator implements java.util.Iterator<K> {
+    /**
+     * An iterator over the keys contained in this map.
+     * <p>
+     * Traverses the internal hash table buckets sequentially, handling linked lists
+     * and Red-Black tree nodes. Supports safe element removal from the backing
+     * {@code CustomMap} via {@link #remove()}.
+     */
+    private final class KeyIterator implements Iterator<K> {
 
         private int bucketIndex = 0;
 
         private Node<K, V> lastReturned, nextNode = null;
 
+        /**
+         * Constructs a new {@code KeyIterator} and advances to the first valid node.
+         */
         private KeyIterator() {
             advanceToNextNode();
         }
 
+        /**
+         * Returns {@code true} if the iteration has more elements.
+         *
+         * @return {@code true} if there is at least one more key to iterate over
+         */
         public boolean hasNext() {
             return nextNode != null;
         }
 
+        /**
+         * Returns the next key in the iteration.
+         *
+         * @return the next key
+         * @throws NoSuchElementException if the iteration has no more elements
+         */
         public K next() {
             if (nextNode == null)
                 throw new NoSuchElementException();
@@ -1144,6 +1213,14 @@ public class CustomMap<K, V> implements Map<K, V> {
             return key;
         }
 
+        /**
+         * Removes from the underlying map the last key returned by this iterator.
+         * This method can be called only once per call to {@link #next()}.
+         *
+         * @throws IllegalStateException if the {@code next} method has not yet been called,
+         *         or the {@code remove} method has already been called after the last call
+         *         to the {@code next} method
+         */
         public void remove() {
             if (lastReturned == null)
                 throw new IllegalStateException();
@@ -1151,6 +1228,9 @@ public class CustomMap<K, V> implements Map<K, V> {
             lastReturned = null;
         }
 
+        /**
+         * Advances the internal pointer to the next available node across the map's buckets.
+         */
         private void advanceToNextNode() {
             if (nextNode != null && nextNode.next != null) {
                 nextNode = nextNode.next;
@@ -1169,7 +1249,10 @@ public class CustomMap<K, V> implements Map<K, V> {
 
     /**
      * A key-value pair representing a map entry, used internally to store mappings in the hash table.
-     * Implements {@link Map.Entry} implicitly through {@link SimpleEntry} in {@code entrySet}.
+     * Implements {@link Entry} implicitly through {@link SimpleEntry} in {@code entrySet}.
+     *
+     * @param <K> the type of keys maintained by this node
+     * @param <V> the type of mapped values
      */
     private static class Node<K, V> {
 
@@ -1181,6 +1264,14 @@ public class CustomMap<K, V> implements Map<K, V> {
 
         Node<K, V> next;
 
+        /**
+         * Constructs a new internal node with the specified hash, key, value, and next pointer.
+         *
+         * @param hash  the hash value for the key
+         * @param key   the key associated with the mapping
+         * @param value the value associated with the mapping
+         * @param next  the next node in the bucket's collision chain
+         */
         private Node(final int hash, final K key, final V value, final Node<K, V> next) {
             this.hash = hash;
             this.key = key;
@@ -1188,25 +1279,52 @@ public class CustomMap<K, V> implements Map<K, V> {
             this.next = next;
         }
 
+        /**
+         * Replaces the value corresponding to this entry with the specified value.
+         *
+         * @param newValue new value to be stored in this entry
+         * @return the old value corresponding to the entry
+         */
         public V setValue(final V newValue) {
             V oldValue = value;
             value = newValue;
             return oldValue;
         }
 
+        /**
+         * Returns a string representation of this node in the format {@code key=value}.
+         *
+         * @return string representation of the entry
+         */
         public final String toString() {
             return key + "=" + value;
         }
     }
 
+    /**
+     * A {@link Set} view of the key-value mappings contained in this map.
+     * <p>
+     * The set is backed by the map, so changes to the map affect the set, and vice versa.
+     * It supports element removal via {@link Iterator#remove()}, {@link Set#remove(Object)},
+     * and {@link Set#clear()}, which safely mutate the underlying {@code CustomMap}.
+     */
     private final class EntrySetView extends AbstractSet<Entry<K, V>> {
 
+        /**
+         * Removes all mappings from the backing {@code CustomMap}, leaving the entry set empty.
+         */
         public void clear() {
             CustomMap.this.clear();
         }
 
+        /**
+         * Returns {@code true} if this set contains the specified mapping.
+         *
+         * @param o object to be checked for containment in this entry set
+         * @return {@code true} if the specified object is a map entry present in the map, {@code false} otherwise
+         */
         public boolean contains(final Object o) {
-            if (!(o instanceof Map.Entry<?, ?> entry))
+            if (!(o instanceof Entry<?, ?> entry))
                 return false;
             Object k = entry.getKey();
             Object v = entry.getValue();
@@ -1214,16 +1332,33 @@ public class CustomMap<K, V> implements Map<K, V> {
             return mappedVal != null && mappedVal.equals(v);
         }
 
-        public Iterator<Map.Entry<K, V>> iterator() {
+        /**
+         * Returns an iterator over the key-value mappings in this entry set.
+         *
+         * @return an iterator over the map's entries
+         */
+        public Iterator<Entry<K, V>> iterator() {
             return new EntryIterator();
         }
 
+        /**
+         * Removes the specified mapping from this set if it is present, effectively
+         * removing the key-value mapping from the backing {@code CustomMap}.
+         *
+         * @param o object to be removed from this set, if present
+         * @return {@code true} if the set contained the specified mapping and it was removed
+         */
         public boolean remove(final Object o) {
-            if (!(o instanceof Map.Entry<?, ?> entry))
+            if (!(o instanceof Entry<?, ?> entry))
                 return false;
             return CustomMap.this.remove(entry.getKey(), entry.getValue());
         }
 
+        /**
+         * Returns the number of key-value mappings in this set.
+         *
+         * @return the number of entries in the map
+         */
         public int size() {
             return CustomMap.this.size();
         }
@@ -1252,11 +1387,29 @@ public class CustomMap<K, V> implements Map<K, V> {
 
         private boolean RED;
 
-        private TreeNode(int hash, K key, V value, Node<K, V> next) {
+        /**
+         * Constructs a new red-black tree node with the specified hash, key, value, and next pointer.
+         *
+         * @param hash  the hash value for the key
+         * @param key   the key associated with the mapping
+         * @param value the value associated with the mapping
+         * @param next  the next node in the collision chain
+         */
+        private TreeNode(final int hash, final K key, final V value, final Node<K, V> next) {
             super(hash, key, value, next);
         }
 
-        private int compare(int h1, int h2, K k1, K k2) {
+        /**
+         * Compares two keys for ordering purposes within the red-black tree, utilizing
+         * hash codes, {@link Comparable} implementation if available, and fallback identity hash codes.
+         *
+         * @param h1 the hash of the first key
+         * @param h2 the hash of the second key
+         * @param k1 the first key
+         * @param k2 the second key
+         * @return a negative integer, zero, or a positive integer as the first key is less than, equal to, or greater than the second
+         */
+        private int compare(final int h1, final int h2, final K k1, final K k2) {
             if (h1 != h2)
                 return h1 < h2 ? -1 : 1;
             if (k1 instanceof Comparable) {
@@ -1267,6 +1420,13 @@ public class CustomMap<K, V> implements Map<K, V> {
             return System.identityHashCode(k1) <= System.identityHashCode(k2) ? -1 : 1;
         }
 
+        /**
+         * Re-balances the red-black tree after a node deletion operation.
+         *
+         * @param root the root of the tree
+         * @param x    the node being adjusted or its replacement
+         * @return the updated root of the tree
+         */
         private static <K, V> TreeNode<K, V> balanceDeletion(TreeNode<K, V> root, TreeNode<K, V> x) {
             for (TreeNode<K, V> grandparentNode, parentLeft, parentRight; ; ) {
                 if (x == null || x == root)
@@ -1349,6 +1509,13 @@ public class CustomMap<K, V> implements Map<K, V> {
             }
         }
 
+        /**
+         * Re-balances the red-black tree after a new node insertion.
+         *
+         * @param root        the root of the tree
+         * @param currentNode the newly inserted node
+         * @return the updated root of the tree
+         */
         private static <K, V> TreeNode<K, V> balanceInsertion(TreeNode<K, V> root, TreeNode<K, V> currentNode) {
             currentNode.RED = true;
             for (TreeNode<K, V> parentNode, grandparentNode, grandparentLeft, grandparentRight; ; ) {
@@ -1397,6 +1564,13 @@ public class CustomMap<K, V> implements Map<K, V> {
             }
         }
 
+        /**
+         * Finds and returns the tree node matching the specified hash and key starting from this node.
+         *
+         * @param hash the hash value to look up
+         * @param o    the key object to look up
+         * @return the matching tree node, or {@code null} if not found
+         */
         private TreeNode<K, V> find(final int hash, final Object o) {
             TreeNode<K, V> p = this;
             do {
@@ -1416,11 +1590,25 @@ public class CustomMap<K, V> implements Map<K, V> {
             return null;
         }
 
+        /**
+         * Locates a tree node by hash and key, beginning at the root of the tree structure.
+         *
+         * @param hash the hash value to look up
+         * @param o    the key object to look up
+         * @return the matching tree node, or {@code null} if not found
+         */
         private TreeNode<K, V> getTreeNode(final int hash, final Object o) {
             return ((parent != null) ? root() : this).find(hash, o);
         }
 
-        private static <K, V> void moveRootToFront(Node<K, V>[] tab, TreeNode<K, V> root) {
+        /**
+         * Ensures that the given root node of a red-black tree bin is placed at the front
+         * of the bucket's collision chain in the table.
+         *
+         16 * @param tab  the hash table array
+         * @param root the root node of the tree
+         */
+        private static <K, V> void moveRootToFront(final Node<K, V>[] tab, final TreeNode<K, V> root) {
             int n;
             if (root != null && tab != null && (n = tab.length) > 0) {
                 int index = (n - 1) & root.hash;
@@ -1441,7 +1629,16 @@ public class CustomMap<K, V> implements Map<K, V> {
             }
         }
 
-        private TreeNode<K, V> putTreeVal(Node<K, V>[] tab, int h, K k, V v) {
+        /**
+         * Inserts a new key-value mapping into the red-black tree structure.
+         *
+         * @param tab the hash table array
+         * @param h   the hash value
+         * @param k   the key
+         * @param v   the value
+         * @return the existing node if the key is already present, or {@code null} if a new node was inserted
+         */
+        private TreeNode<K, V> putTreeVal(final Node<K, V>[] tab, final int h, final K k, final V v) {
             TreeNode<K, V> root = (parent != null) ? root() : this;
             for (TreeNode<K, V> p = root; ; ) {
                 int dir;
@@ -1473,7 +1670,13 @@ public class CustomMap<K, V> implements Map<K, V> {
             }
         }
 
-        private void removeTreeNode(Node<K, V>[] tab) {
+        /**
+         * Removes this node from the red-black tree and re-balances the tree structure,
+         * untreeifying the bin if the remaining nodes fall below the threshold.
+         *
+         * @param tab the hash table array
+         */
+        private void removeTreeNode(final Node<K, V>[] tab) {
             int n;
             if (tab == null || (n = tab.length) == 0)
                 return;
@@ -1557,6 +1760,11 @@ public class CustomMap<K, V> implements Map<K, V> {
             moveRootToFront(tab, r);
         }
 
+        /**
+         * Traverses parent links to find and return the root node of this red-black tree.
+         *
+         * @return the root node of the tree
+         */
         private TreeNode<K, V> root() {
             for (TreeNode<K, V> r = this, p; ; ) {
                 if ((p = r.parent) == null)
@@ -1565,6 +1773,13 @@ public class CustomMap<K, V> implements Map<K, V> {
             }
         }
 
+        /**
+         * Performs a left rotation on the red-black tree around the specified node.
+         *
+         * @param root the current root of the tree
+         * @param p    the pivot node for rotation
+         * @return the new root of the tree
+         */
         private static <K, V> TreeNode<K, V> rotateLeft(TreeNode<K, V> root, final TreeNode<K, V> p) {
             TreeNode<K, V> r = p.right;
             p.right = r.left;
@@ -1582,6 +1797,13 @@ public class CustomMap<K, V> implements Map<K, V> {
             return root;
         }
 
+        /**
+         * Performs a right rotation on the red-black tree around the specified node.
+         *
+         * @param root the current root of the tree
+         * @param p    the pivot node for rotation
+         * @return the new root of the tree
+         */
         private static <K, V> TreeNode<K, V> rotateRight(TreeNode<K, V> root, final TreeNode<K, V> p) {
             TreeNode<K, V> l = p.left;
             p.left = l.right;
@@ -1599,7 +1821,15 @@ public class CustomMap<K, V> implements Map<K, V> {
             return root;
         }
 
-        private void split(Node<K, V>[] tab, int index, int bit) {
+        /**
+         * Splits a tree bin into low and high bins during table resizing,
+         * untreeifying them if they drop below the threshold.
+         *
+         * @param tab   the hash table array
+         * @param index the current bucket index
+         * @param bit   the bit mask used for partitioning
+         */
+        private void split(final Node<K, V>[] tab, final int index, final int bit) {
             TreeNode<K, V> b = this;
             TreeNode<K, V> loHead = null, loTail = null;
             TreeNode<K, V> hiHead = null, hiTail = null;
@@ -1643,7 +1873,12 @@ public class CustomMap<K, V> implements Map<K, V> {
                 }
         }
 
-        private void treeify(Node<K, V>[] tab) {
+        /**
+         * Forms a balanced red-black tree out of the linked list nodes starting from this node.
+         *
+         * @param tab the hash table array
+         */
+        private void treeify(final Node<K, V>[] tab) {
             TreeNode<K, V> root = null;
             for (TreeNode<K, V> x = this, next; x != null; x = next) {
                 next = (TreeNode<K, V>) x.next;
@@ -1652,7 +1887,7 @@ public class CustomMap<K, V> implements Map<K, V> {
                     x.parent = null;
                     x.RED = false;
                     root = x;
-                } else {
+                } else
                     for (TreeNode<K, V> p = root; ; ) {
                         int dir = compare(x.hash, p.hash, x.key, p.key);
                         TreeNode<K, V> xp = p;
@@ -1666,12 +1901,16 @@ public class CustomMap<K, V> implements Map<K, V> {
                             break;
                         }
                     }
-                }
             }
             moveRootToFront(tab, root);
         }
 
-        Node<K, V> untreeify() {
+        /**
+         * Converts this tree node structure back into a standard singly-linked list of {@link Node} instances.
+         *
+         * @return the head node of the new linked list
+         */
+        private Node<K, V> untreeify() {
             Node<K, V> hd = null, tl = null;
             for (Node<K, V> q = this; q != null; q = q.next) {
                 Node<K, V> p = new Node<>(q.hash, q.key, q.value, null);
@@ -1685,35 +1924,72 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
     }
 
+    /**
+     * A {@link Collection} view of the values contained in this map[cite: 2].
+     * <p>
+     * The collection supports removal operations and clearing via {@link Collection#remove(Object)},
+     * {@link Collection#clear()}, and iterator removal, which safely mutate the underlying {@code CustomMap}.
+     */
     private final class ValuesView extends AbstractCollection<V> {
 
+        /**
+         * Removes all mappings from the backing {@code CustomMap}, leaving the values collection empty.
+         */
         public void clear() {
             CustomMap.this.clear();
         }
 
+        /**
+         * Returns {@code true} if this collection maps one or more keys to the specified value.
+         *
+         * @param o value whose presence in this collection is to be tested
+         * @return {@code true} if the specified value is mapped to by at least one key, {@code false} otherwise
+         */
         public boolean contains(final Object o) {
             return CustomMap.this.containsValue(o);
         }
 
-        public java.util.Iterator<V> iterator() {
+        /**
+         * Returns an iterator over the elements in this values collection.
+         *
+         * @return an iterator over the map's values
+         */
+        public Iterator<V> iterator() {
             return new ValueIterator();
         }
 
+        /**
+         * Returns the number of values in this collection.
+         *
+         * @return the number of value mappings in the map
+         */
         public int size() {
             return CustomMap.this.size();
         }
     }
 
-    private final class EntryIterator implements Iterator<Map.Entry<K, V>> {
+    /**
+     * An iterator over the key-value entries contained in this map.
+     * <p>
+     * Traverses the internal table sequentially across buckets, returning write-through
+     * {@link Map.Entry} instances that reflect and modify the underlying map.
+     */
+    private final class EntryIterator implements Iterator<Entry<K, V>> {
 
         private int bucketIndex = 0;
 
         private Node<K, V> nextNode, lastReturned = null;
 
+        /**
+         * Constructs a new {@code EntryIterator} and advances to the first valid entry node.
+         */
         private EntryIterator() {
             advanceToNextNode();
         }
 
+        /**
+         * Advances the internal pointer to the next available entry node across the map's buckets.
+         */
         private void advanceToNextNode() {
             if (nextNode != null && nextNode.next != null) {
                 nextNode = nextNode.next;
@@ -1729,11 +2005,22 @@ public class CustomMap<K, V> implements Map<K, V> {
             }
         }
 
+        /**
+         * Returns {@code true} if the iteration has more entries.
+         *
+         * @return {@code true} if there is at least one more entry to iterate over
+         */
         public boolean hasNext() {
             return nextNode != null;
         }
 
-        public Map.Entry<K, V> next() {
+        /**
+         * Returns the next entry in the iteration.
+         *
+         * @return the next map entry
+         * @throws NoSuchElementException if the iteration has no more elements
+         */
+        public Entry<K, V> next() {
             if (nextNode == null)
                 throw new NoSuchElementException();
             lastReturned = nextNode;
@@ -1747,6 +2034,14 @@ public class CustomMap<K, V> implements Map<K, V> {
             };
         }
 
+        /**
+         * Removes from the underlying map the last entry returned by this iterator.
+         * This method can be called only once per call to {@link #next()}.
+         *
+         * @throws IllegalStateException if the {@code next} method has not yet been called,
+         *         or the {@code remove} method has already been called after the last call
+         *         to the {@code next} method
+         */
         public void remove() {
             if (lastReturned == null)
                 throw new IllegalStateException();
@@ -1755,16 +2050,28 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
     }
 
-    private final class ValueIterator implements java.util.Iterator<V> {
+    /**
+     * An iterator over the values contained in this map.
+     * <p>
+     * Traverses the internal table sequentially across buckets, returning values
+     * while supporting safe element removal from the backing {@code CustomMap} via {@link #remove()}.
+     */
+    private final class ValueIterator implements Iterator<V> {
 
         private int bucketIndex = 0;
 
         private Node<K, V> lastReturned, nextNode = null;
 
+        /**
+         * Constructs a new {@code ValueIterator} and advances to the first valid value node.
+         */
         private ValueIterator() {
             advanceToNextNode();
         }
 
+        /**
+         * Advances the internal pointer to the next available value node across the map's buckets.
+         */
         private void advanceToNextNode() {
             if (nextNode != null && nextNode.next != null) {
                 nextNode = nextNode.next;
@@ -1780,10 +2087,21 @@ public class CustomMap<K, V> implements Map<K, V> {
             }
         }
 
+        /**
+         * Returns {@code true} if the iteration has more values.
+         *
+         * @return {@code true} if there is at least one more value to iterate over
+         */
         public boolean hasNext() {
             return nextNode != null;
         }
 
+        /**
+         * Returns the next value in the iteration.
+         *
+         * @return the next value
+         * @throws NoSuchElementException if the iteration has no more elements
+         */
         public V next() {
             if (nextNode == null)
                 throw new NoSuchElementException();
@@ -1793,6 +2111,14 @@ public class CustomMap<K, V> implements Map<K, V> {
             return value;
         }
 
+        /**
+         * Removes from the underlying map the mapping whose value was last returned by this iterator.
+         * This method can be called only once per call to {@link #next()}.
+         *
+         * @throws IllegalStateException if the {@code next} method has not yet been called,
+         *         or the {@code remove} method has already been called after the last call
+         *         to the {@code next} method
+         */
         public void remove() {
             if (lastReturned == null)
                 throw new IllegalStateException();
