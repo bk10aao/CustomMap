@@ -1,89 +1,53 @@
-from pathlib import Path
 import pandas as pd
 
-HEADER_MAPPING = {
-    # Constructors
-    "benchmarkConstructor": "Constructor()",
-    "constructor": "Constructor()",
 
-    # Map Operations & Methods
-    "benchmarkClear": "clear()",
-    "benchmarkCompute": "compute()",
-    "benchmarkComputeIfAbsent": "computeIfAbsent()",
-    "benchmarkComputeIfPresent": "computeIfPresent()",
-    "benchmarkContainsKey": "containsKey()",
-    "benchmarkContainsValue": "containsValue()",
-    "benchmarkEntrySet": "entrySet()",
-    "benchmarkEquals": "equals()",
-    "benchmarkForEach": "forEach()",
-    "benchmarkGet": "get()",
-    "benchmarkGetOrDefault": "getOrDefault()",
-    "benchmarkHashCode": "hashCode()",
-    "benchmarkKeySet": "keySet()",
-    "benchmarkMerge": "merge()",
-    "benchmarkPut": "put()",
-    "benchmarkPutAll": "putAll()",
-    "benchmarkPutIfAbsent": "putIfAbsent()",
-    "benchmarkRemove": "remove()",
-    "benchmarkRemoveWithValue": "remove(Object, Object)",
-    "benchmarkReplace": "replace()",
-    "benchmarkReplaceAll": "replaceAll()",
-    "benchmarkReplaceWithOldNew": "replace(K, V, V)",
-    "benchmarkToString": "toString()",
-    "benchmarkValues": "values()"
-}
+def convert_jmh_to_wide(input_csv, output_csv):
+  df = pd.read_csv(input_csv, sep=';')
 
-COLUMN_ORDER = [
-    "Constructor()",
-    "clear()", "compute()", "computeIfAbsent()", "computeIfPresent()",
-    "containsKey()", "containsValue()", "entrySet()", "equals()",
-    "forEach()", "get()", "getOrDefault()", "hashCode()", "keySet()",
-    "merge()", "put()", "putAll()", "putIfAbsent()", "remove()",
-    "remove(Object, Object)", "replace()", "replaceAll()",
-    "replace(K, V, V)", "toString()", "values()"
-]
+  # Mapping of JMH benchmark names to full method signatures
+  benchmark_to_signature = {
+      'benchmarkClear': 'clear()',
+      'benchmarkCompute': 'compute(K, BiFunction)',
+      'benchmarkComputeIfAbsent': 'computeIfAbsent(K, Function)',
+      'benchmarkComputeIfPresent': 'computeIfPresent(K, BiFunction)',
+      'benchmarkConstructor': 'Constructor()',
+      'benchmarkContainsKey': 'containsKey(Object)',
+      'benchmarkContainsValue': 'containsValue(Object)',
+      'benchmarkEntrySet': 'entrySet()',
+      'benchmarkEquals': 'equals(Object)',
+      'benchmarkForEach': 'forEach(BiConsumer)',
+      'benchmarkGet': 'get(Object)',
+      'benchmarkGetOrDefault': 'getOrDefault(Object, V)',
+      'benchmarkHashCode': 'hashCode()',
+      'benchmarkKeySet': 'keySet()',
+      'benchmarkMerge': 'merge(K, V, BiFunction)',
+      'benchmarkPut': 'put(K, V)',
+      'benchmarkPutAll': 'putAll(Map)',
+      'benchmarkPutIfAbsent': 'putIfAbsent(K, V)',
+      'benchmarkRemove': 'remove(Object)',
+      'benchmarkRemoveWithValue': 'remove(Object, Object)',
+      'benchmarkReplace': 'replace(K, V)',
+      'benchmarkReplaceAll': 'replaceAll(BiFunction)',
+      'benchmarkReplaceWithOldNew': 'replace(K, V, V)',
+      'benchmarkToString': 'toString()',
+      'benchmarkValues': 'values()',
+  }
 
+  df['Method'] = df['Benchmark'].map(benchmark_to_signature)
 
-def convert_to_wide_matrix(input_file: str | Path, output_file: str | Path) -> None:
-    input_path = Path(input_file)
-    output_path = Path(output_file)
+  # Pivot table: Size as rows, Method signatures as columns, Score (ns/op) as values
+  pivot_df = (
+      df.pivot(index='Size', columns='Method', values='Score (ns/op)')
+      .reset_index()
+  )
 
-    if not input_path.exists():
-        print(f"Skipping '{input_path}' (file not found).")
-        return
-
-    df = pd.read_csv(input_path, sep=';')
-
-    # If the file uses standard JMH format (Benchmark, Size, Score)
-    if 'Benchmark' in df.columns:
-        df['Benchmark'] = df['Benchmark'].astype(str).str.strip('"\t ')
-        df['Metric'] = df['Benchmark'].map(HEADER_MAPPING).fillna(df['Benchmark'])
-
-        pivot_df = df.pivot_table(
-            index='Size',
-            columns='Metric',
-            values='Score (ns/op)',
-            aggfunc='mean'
-        ).round()
-    else:
-        # If the file is already structured or uses custom headers, clean columns and sort
-        pivot_df = df.set_index('Size') if 'Size' in df.columns else df
-        # Rename any columns matching header mapping keys
-        pivot_df = pivot_df.rename(columns=HEADER_MAPPING)
-        pivot_df = pivot_df.round()
-
-    # Convert to nullable Int64 to avoid NaN display issues
-    pivot_df = pivot_df.astype('Int64')
-
-    # Reorder columns according to COLUMN_ORDER with any extras appended
-    available_columns = [col for col in COLUMN_ORDER if col in pivot_df.columns]
-    extra_columns = [col for col in pivot_df.columns if col not in available_columns]
-    pivot_df = pivot_df.reindex(columns=available_columns + extra_columns)
-
-    pivot_df.to_csv(output_path, sep=';')
-    print(f"Wide matrix CSV created: {output_path}")
+  # Save as a semicolon-delimited wide matrix CSV
+  pivot_df.to_csv(output_csv, sep=';', index=False)
+  print(f'Successfully converted {input_csv} -> {output_csv}')
 
 
-if __name__ == "__main__":
-    convert_to_wide_matrix("CustomMap_jmh_performance.csv", "CustomMap_wide_matrix.csv")
-    convert_to_wide_matrix("HashMap_jmh_performance.csv", "HashMap_wide_matrix.csv")
+if __name__ == '__main__':
+  convert_jmh_to_wide(
+      'CustomMap_jmh_performance.csv', 'CustomMap_wide_matrix.csv'
+  )
+  convert_jmh_to_wide('HashMap_jmh_performance.csv', 'HashMap_wide_matrix.csv')

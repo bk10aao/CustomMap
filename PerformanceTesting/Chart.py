@@ -32,31 +32,34 @@ COLORS = {
 FIGURE_SIZE = (12, 6.2)
 DPI = 150
 
-# Map display titles / filenames to their exact wide matrix column headers
+# Map display titles / filenames to their exact wide matrix column headers with full parameter signatures
 OPERATIONS = {
     'Constructor()': 'Constructor()',
     'clear()': 'clear()',
-    'compute()': 'compute()',
-    'computeIfAbsent()': 'computeIfAbsent()',
-    'computeIfPresent()': 'computeIfPresent()',
-    'containsKey()': 'containsKey()',
-    'containsValue()': 'containsValue()',
+    'compute(K, BiFunction)': 'compute(K, BiFunction)',
+    'computeIfAbsent(K, Function)': 'computeIfAbsent(K, Function)',
+    'computeIfPresent(K, BiFunction)': 'computeIfPresent(K, BiFunction)',
+    'containsKey(Object)': 'containsKey(Object)',
+    'containsValue(Object)': 'containsValue(Object)',
     'entrySet()': 'entrySet()',
-    'equals()': 'equals()',
-    'forEach()': 'forEach()',
-    'get()': 'get()',
-    'getOrDefault()': 'getOrDefault()',
+    'equals(Object)': 'equals(Object)',
+    'forEach(BiConsumer)': 'forEach(BiConsumer)',
+    'get(Object)': 'get(Object)',
+    'getOrDefault(Object, V)': 'getOrDefault(Object, V)',
+    'hash(Object)': 'hash(Object)',
     'hashCode()': 'hashCode()',
+    'isEmpty()': 'isEmpty()',
     'keySet()': 'keySet()',
-    'merge()': 'merge()',
-    'put()': 'put()',
-    'putAll()': 'putAll()',
-    'putIfAbsent()': 'putIfAbsent()',
-    'remove()': 'remove()',
+    'merge(K, V, BiFunction)': 'merge(K, V, BiFunction)',
+    'put(K, V)': 'put(K, V)',
+    'putAll(Map)': 'putAll(Map)',
+    'putIfAbsent(K, V)': 'putIfAbsent(K, V)',
+    'remove(Object)': 'remove(Object)',
     'remove(Object, Object)': 'remove(Object, Object)',
-    'replace()': 'replace()',
-    'replaceAll()': 'replaceAll()',
+    'replace(K, V)': 'replace(K, V)',
     'replace(K, V, V)': 'replace(K, V, V)',
+    'replaceAll(BiFunction)': 'replaceAll(BiFunction)',
+    'size()': 'size()',
     'toString()': 'toString()',
     'values()': 'values()',
 }
@@ -172,7 +175,7 @@ def main():
         if not any(col_name in custommap_data.get(s, {}) or col_name in hashmap_data.get(s, {}) for s in canonical_sizes):
             continue
 
-        output_filename = chart_label.replace('/', '_').replace('(', '').replace(')', '').replace(',', '_') + '.png'
+        output_filename = chart_label.replace('/', '_').replace('(', '').replace(')', '').replace(',', '_').replace(' ', '') + '.png'
         output_path = os.path.join(OUTPUT_DIR, output_filename)
         create_chart(chart_label, col_name, custommap_data, hashmap_data, canonical_sizes, output_path)
         print(f"  ✓ {output_filename}")

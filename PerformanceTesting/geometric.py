@@ -23,8 +23,8 @@ methods = [col for col in custom_df.columns if col != 'Size' and col in jdk_df.c
 custom_df_fixed = custom_df.copy()
 jdk_df_fixed = jdk_df.copy()
 for col in methods:
-    custom_df_fixed[col] = pd.to_numeric(custom_df_fixed[col], errors='coerce').fillna(1).replace(0, 1)
-    jdk_df_fixed[col] = pd.to_numeric(jdk_df_fixed[col], errors='coerce').fillna(1).replace(0, 1)
+  custom_df_fixed[col] = pd.to_numeric(custom_df_fixed[col], errors='coerce').fillna(1).replace(0, 1)
+  jdk_df_fixed[col] = pd.to_numeric(jdk_df_fixed[col], errors='coerce').fillna(1).replace(0, 1)
 
 ratios = []
 labels = []
@@ -34,21 +34,21 @@ jdk_win_color = '#FF4D4D'    # Red
 custom_win_color = '#4DA6FF' # Blue
 
 for m in methods:
-    # Using arithmetic mean to align with your standardized tables
-    mean_custom = np.mean(custom_df_fixed[m])
-    mean_jdk = np.mean(jdk_df_fixed[m])
+  # Using arithmetic mean to align with your standardized tables
+  mean_custom = np.mean(custom_df_fixed[m])
+  mean_jdk = np.mean(jdk_df_fixed[m])
 
-    # Positive ratio = Custom faster (extends to the right)
-    # Negative ratio = JDK faster (extends to the left)
-    if mean_custom < mean_jdk:
-        speedup = mean_jdk / mean_custom
-        ratios.append(speedup - 1)
-        colors.append(custom_win_color)
-    else:
-        speedup = mean_custom / mean_jdk
-        ratios.append(-(speedup - 1))
-        colors.append(jdk_win_color)
-    labels.append(m)
+  # Positive ratio = Custom faster (extends to the right)
+  # Negative ratio = JDK faster (extends to the left)
+  if mean_custom < mean_jdk:
+    speedup = mean_jdk / mean_custom
+    ratios.append(speedup - 1)
+    colors.append(custom_win_color)
+  else:
+    speedup = mean_custom / mean_jdk
+    ratios.append(-(speedup - 1))
+    colors.append(jdk_win_color)
+  labels.append(m)
 
 sorted_indices = np.argsort(ratios)
 sorted_ratios = [ratios[idx] for idx in sorted_indices]
@@ -88,39 +88,39 @@ ax.set_yticklabels(sorted_labels, color='#ffffff', fontsize=10)
 
 # Add exact numeric speedup values directly next to each bar
 for idx, (bar, r) in enumerate(zip(bars, sorted_ratios)):
-    val = abs(r)
-    if val < 0.05:
-        text_str = 'Tie'
+  val = abs(r)
+  if val < 0.05:
+    text_str = 'Tie'
+  else:
+    factor = val + 1
+    if r < 0:
+      text_str = f'JDK {factor:.2f}x'
     else:
-        factor = val + 1
-        if r < 0:
-            text_str = f'JDK {factor:.2f}x'
-        else:
-            text_str = f'Custom {factor:.2f}x'
+      text_str = f'Custom {factor:.2f}x'
 
-    # Position text outside the bar on the correct side
-    if r >= 0:
-        ax.text(
-            r + 0.02,
-            idx,
-            f'  {text_str}',
-            va='center',
-            ha='left',
-            color='#ffffff',
-            fontsize=9,
-            fontweight='bold',
-            )
-    else:
-        ax.text(
-            r - 0.02,
-            idx,
-            f'{text_str}  ',
-            va='center',
-            ha='right',
-            color='#ffffff',
-            fontsize=9,
-            fontweight='bold',
-            )
+  # Position text outside the bar on the correct side
+  if r >= 0:
+    ax.text(
+        r + 0.02,
+        idx,
+        f'  {text_str}',
+        va='center',
+        ha='left',
+        color='#ffffff',
+        fontsize=9,
+        fontweight='bold',
+    )
+  else:
+    ax.text(
+        r - 0.02,
+        idx,
+        f'{text_str}  ',
+        va='center',
+        ha='right',
+        color='#ffffff',
+        fontsize=9,
+        fontweight='bold',
+    )
 
 ax.set_title(
     (
@@ -143,7 +143,7 @@ ax.grid(True, axis='x', linestyle='--', alpha=0.3, color='#888888')
 ax.tick_params(colors='#ffffff', which='both', length=0)
 
 for spine in ax.spines.values():
-    spine.set_edgecolor('#555555')
+  spine.set_edgecolor('#555555')
 
 plt.tight_layout()
 plt.savefig('geometric.png', dpi=300, transparent=True)

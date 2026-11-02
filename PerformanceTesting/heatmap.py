@@ -34,10 +34,10 @@ for i, m in enumerate(methods):
             row_labels.append("Tie")
         elif c_val < j_val:
             factor = j_val / c_val
-            row_labels.append(f"{factor:.1f}× Custom")
+            row_labels.append(f"{factor:.1f}×")
         else:
             factor = c_val / j_val
-            row_labels.append(f"{factor:.1f}× JDK")
+            row_labels.append(f"{factor:.1f}×")
 
     text_labels.append(row_labels)
 
@@ -96,5 +96,5 @@ for text in cbar.ax.yaxis.get_ticklabels():
 
 # 10. Compute tight layout and save the file
 plt.tight_layout()
-plt.savefig('heatmap.png', dpi=300, transparent=True, facecolor='none', edgecolor='none')
+plt.savefig('map_performance_heatmap_transparent.png', dpi=300, transparent=True, facecolor='none', edgecolor='none')
 plt.close()
