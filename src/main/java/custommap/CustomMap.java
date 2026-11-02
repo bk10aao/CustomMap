@@ -1116,120 +1116,27 @@ public class CustomMap<K, V> implements Map<K, V> {
             hd.treeify(tab);
     }
 
-    private final class KeySetView extends AbstractSet<K> {
-
-        /**
-         * Removes all mappings from the backing {@code CustomMap}, leaving the key set empty.
-         */
-        public void clear() {
-            CustomMap.this.clear();
-        }
-
-        /**
-         * Returns {@code true} if this set contains the specified element.
-         *
-         * @param o element whose presence in this key set is to be tested
-         * @return {@code true} if the specified element is present as a key, {@code false} otherwise
-         * @throws NullPointerException if the specified element is null
-         */
-        public boolean contains(final Object o) {
-            return CustomMap.this.containsKey(o);
-        }
-
-        /**
-         * Returns an iterator over the elements in this key set.
-         *
-         * @return an iterator over the map's keys
-         */
-        public Iterator<K> iterator() {
-            return new KeyIterator();
-        }
-
-        /**
-         * Removes the specified element from this set if it is present, effectively
-         * removing the corresponding mapping from the backing {@code CustomMap}.
-         *
-         * @param o object to be removed from this set, if present
-         * @return {@code true} if the set contained the specified element and it was removed
-         * @throws NullPointerException if the specified key is null
-         */
-        public boolean remove(final Object o) {
-            int oldSize = CustomMap.this.size;
-            CustomMap.this.remove(o);
-            return CustomMap.this.size < oldSize;
-        }
-
-        /**
-         * Returns the number of elements (keys) in this set.
-         *
-         * @return the number of key mappings in the map
-         */
-        public int size() {
-            return CustomMap.this.size();
-        }
-    }
-
     /**
-     * An iterator over the keys contained in this map.
+     * An iterator over the key-value entries contained in this map.
      * <p>
-     * Traverses the internal hash table buckets sequentially, handling linked lists
-     * and Red-Black tree nodes. Supports safe element removal from the backing
-     * {@code CustomMap} via {@link #remove()}.
+     * Traverses the internal table sequentially across buckets, returning write-through
+     * {@link Map.Entry} instances that reflect and modify the underlying map.
      */
-    private final class KeyIterator implements Iterator<K> {
+    private final class EntryIterator implements Iterator<Entry<K, V>> {
 
         private int bucketIndex = 0;
 
-        private Node<K, V> lastReturned, nextNode = null;
+        private Node<K, V> nextNode, lastReturned = null;
 
         /**
-         * Constructs a new {@code KeyIterator} and advances to the first valid node.
+         * Constructs a new {@code EntryIterator} and advances to the first valid entry node.
          */
-        private KeyIterator() {
+        private EntryIterator() {
             advanceToNextNode();
         }
 
         /**
-         * Returns {@code true} if the iteration has more elements.
-         *
-         * @return {@code true} if there is at least one more key to iterate over
-         */
-        public boolean hasNext() {
-            return nextNode != null;
-        }
-
-        /**
-         * Returns the next key in the iteration.
-         *
-         * @return the next key
-         * @throws NoSuchElementException if the iteration has no more elements
-         */
-        public K next() {
-            if (nextNode == null)
-                throw new NoSuchElementException();
-            lastReturned = nextNode;
-            K key = nextNode.key;
-            advanceToNextNode();
-            return key;
-        }
-
-        /**
-         * Removes from the underlying map the last key returned by this iterator.
-         * This method can be called only once per call to {@link #next()}.
-         *
-         * @throws IllegalStateException if the {@code next} method has not yet been called,
-         *         or the {@code remove} method has already been called after the last call
-         *         to the {@code next} method
-         */
-        public void remove() {
-            if (lastReturned == null)
-                throw new IllegalStateException();
-            CustomMap.this.remove(lastReturned.key);
-            lastReturned = null;
-        }
-
-        /**
-         * Advances the internal pointer to the next available node across the map's buckets.
+         * Advances the internal pointer to the next available entry node across the map's buckets.
          */
         private void advanceToNextNode() {
             if (nextNode != null && nextNode.next != null) {
@@ -1245,59 +1152,49 @@ public class CustomMap<K, V> implements Map<K, V> {
                 }
             }
         }
-    }
-
-    /**
-     * A key-value pair representing a map entry, used internally to store mappings in the hash table.
-     * Implements {@link Entry} implicitly through {@link SimpleEntry} in {@code entrySet}.
-     *
-     * @param <K> the type of keys maintained by this node
-     * @param <V> the type of mapped values
-     */
-    private static class Node<K, V> {
-
-        final int hash;
-
-        final K key;
-
-        V value;
-
-        Node<K, V> next;
 
         /**
-         * Constructs a new internal node with the specified hash, key, value, and next pointer.
+         * Returns {@code true} if the iteration has more entries.
          *
-         * @param hash  the hash value for the key
-         * @param key   the key associated with the mapping
-         * @param value the value associated with the mapping
-         * @param next  the next node in the bucket's collision chain
+         * @return {@code true} if there is at least one more entry to iterate over
          */
-        private Node(final int hash, final K key, final V value, final Node<K, V> next) {
-            this.hash = hash;
-            this.key = key;
-            this.value = value;
-            this.next = next;
+        public boolean hasNext() {
+            return nextNode != null;
         }
 
         /**
-         * Replaces the value corresponding to this entry with the specified value.
+         * Returns the next entry in the iteration.
          *
-         * @param newValue new value to be stored in this entry
-         * @return the old value corresponding to the entry
+         * @return the next map entry
+         * @throws NoSuchElementException if the iteration has no more elements
          */
-        public V setValue(final V newValue) {
-            V oldValue = value;
-            value = newValue;
-            return oldValue;
+        public Entry<K, V> next() {
+            if (nextNode == null)
+                throw new NoSuchElementException();
+            lastReturned = nextNode;
+            Node<K, V> current = nextNode;
+            advanceToNextNode();
+
+            return new SimpleEntry<>(current.key, current.value) {
+                public V setValue(V value) {
+                    return current.setValue(value);
+                }
+            };
         }
 
         /**
-         * Returns a string representation of this node in the format {@code key=value}.
+         * Removes from the underlying map the last entry returned by this iterator.
+         * This method can be called only once per call to {@link #next()}.
          *
-         * @return string representation of the entry
+         * @throws IllegalStateException if the {@code next} method has not yet been called,
+         *         or the {@code remove} method has already been called after the last call
+         *         to the {@code next} method
          */
-        public final String toString() {
-            return key + "=" + value;
+        public void remove() {
+            if (lastReturned == null)
+                throw new IllegalStateException();
+            CustomMap.this.remove(lastReturned.key);
+            lastReturned = null;
         }
     }
 
@@ -1365,6 +1262,191 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     /**
+     * An iterator over the keys contained in this map.
+     * <p>
+     * Traverses the internal hash table buckets sequentially, handling linked lists
+     * and Red-Black tree nodes. Supports safe element removal from the backing
+     * {@code CustomMap} via {@link #remove()}.
+     */
+    private final class KeyIterator implements Iterator<K> {
+
+        private int bucketIndex = 0;
+
+        private Node<K, V> lastReturned, nextNode = null;
+
+        /**
+         * Constructs a new {@code KeyIterator} and advances to the first valid node.
+         */
+        private KeyIterator() {
+            advanceToNextNode();
+        }
+
+        /**
+         * Advances the internal pointer to the next available node across the map's buckets.
+         */
+        private void advanceToNextNode() {
+            if (nextNode != null && nextNode.next != null) {
+                nextNode = nextNode.next;
+                return;
+            }
+            nextNode = null;
+            while (bucketIndex < mapSize) {
+                Node<K, V> head = map[bucketIndex++];
+                if (head != null) {
+                    nextNode = head;
+                    break;
+                }
+            }
+        }
+
+        /**
+         * Returns {@code true} if the iteration has more elements.
+         *
+         * @return {@code true} if there is at least one more key to iterate over
+         */
+        public boolean hasNext() {
+            return nextNode != null;
+        }
+
+        /**
+         * Returns the next key in the iteration.
+         *
+         * @return the next key
+         * @throws NoSuchElementException if the iteration has no more elements
+         */
+        public K next() {
+            if (nextNode == null)
+                throw new NoSuchElementException();
+            lastReturned = nextNode;
+            K key = nextNode.key;
+            advanceToNextNode();
+            return key;
+        }
+
+        /**
+         * Removes from the underlying map the last key returned by this iterator.
+         * This method can be called only once per call to {@link #next()}.
+         *
+         * @throws IllegalStateException if the {@code next} method has not yet been called,
+         *         or the {@code remove} method has already been called after the last call
+         *         to the {@code next} method
+         */
+        public void remove() {
+            if (lastReturned == null)
+                throw new IllegalStateException();
+            CustomMap.this.remove(lastReturned.key);
+            lastReturned = null;
+        }
+    }
+
+    private final class KeySetView extends AbstractSet<K> {
+
+        /**
+         * Removes all mappings from the backing {@code CustomMap}, leaving the key set empty.
+         */
+        public void clear() {
+            CustomMap.this.clear();
+        }
+
+        /**
+         * Returns {@code true} if this set contains the specified element.
+         *
+         * @param o element whose presence in this key set is to be tested
+         * @return {@code true} if the specified element is present as a key, {@code false} otherwise
+         * @throws NullPointerException if the specified element is null
+         */
+        public boolean contains(final Object o) {
+            return CustomMap.this.containsKey(o);
+        }
+
+        /**
+         * Returns an iterator over the elements in this key set.
+         *
+         * @return an iterator over the map's keys
+         */
+        public Iterator<K> iterator() {
+            return new KeyIterator();
+        }
+
+        /**
+         * Removes the specified element from this set if it is present, effectively
+         * removing the corresponding mapping from the backing {@code CustomMap}.
+         *
+         * @param o object to be removed from this set, if present
+         * @return {@code true} if the set contained the specified element and it was removed
+         * @throws NullPointerException if the specified key is null
+         */
+        public boolean remove(final Object o) {
+            int oldSize = CustomMap.this.size;
+            CustomMap.this.remove(o);
+            return CustomMap.this.size < oldSize;
+        }
+
+        /**
+         * Returns the number of elements (keys) in this set.
+         *
+         * @return the number of key mappings in the map
+         */
+        public int size() {
+            return CustomMap.this.size();
+        }
+    }
+
+    /**
+     * A key-value pair representing a map entry, used internally to store mappings in the hash table.
+     * Implements {@link Entry} implicitly through {@link SimpleEntry} in {@code entrySet}.
+     *
+     * @param <K> the type of keys maintained by this node
+     * @param <V> the type of mapped values
+     */
+    private static class Node<K, V> {
+
+        final int hash;
+
+        final K key;
+
+        V value;
+
+        Node<K, V> next;
+
+        /**
+         * Constructs a new internal node with the specified hash, key, value, and next pointer.
+         *
+         * @param hash  the hash value for the key
+         * @param key   the key associated with the mapping
+         * @param value the value associated with the mapping
+         * @param next  the next node in the bucket's collision chain
+         */
+        private Node(final int hash, final K key, final V value, final Node<K, V> next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
+
+        /**
+         * Replaces the value corresponding to this entry with the specified value.
+         *
+         * @param newValue new value to be stored in this entry
+         * @return the old value corresponding to the entry
+         */
+        public V setValue(final V newValue) {
+            V oldValue = value;
+            value = newValue;
+            return oldValue;
+        }
+
+        /**
+         * Returns a string representation of this node in the format {@code key=value}.
+         *
+         * @return string representation of the entry
+         */
+        public final String toString() {
+            return key + "=" + value;
+        }
+    }
+
+    /**
      * An internal, mutable red-black tree node, doubling as this map's
      * {@link Map.Entry} implementation. A {@code Node} is directly wired into
      * the tree structure via its {@link #left}, {@link #right}, and
@@ -1397,27 +1479,6 @@ public class CustomMap<K, V> implements Map<K, V> {
          */
         private TreeNode(final int hash, final K key, final V value, final Node<K, V> next) {
             super(hash, key, value, next);
-        }
-
-        /**
-         * Compares two keys for ordering purposes within the red-black tree, utilizing
-         * hash codes, {@link Comparable} implementation if available, and fallback identity hash codes.
-         *
-         * @param h1 the hash of the first key
-         * @param h2 the hash of the second key
-         * @param k1 the first key
-         * @param k2 the second key
-         * @return a negative integer, zero, or a positive integer as the first key is less than, equal to, or greater than the second
-         */
-        private int compare(final int h1, final int h2, final K k1, final K k2) {
-            if (h1 != h2)
-                return h1 < h2 ? -1 : 1;
-            if (k1 instanceof Comparable) {
-                int cmp = ((Comparable<? super K>) k1).compareTo(k2);
-                if (cmp != 0)
-                    return cmp;
-            }
-            return System.identityHashCode(k1) <= System.identityHashCode(k2) ? -1 : 1;
         }
 
         /**
@@ -1565,6 +1626,27 @@ public class CustomMap<K, V> implements Map<K, V> {
         }
 
         /**
+         * Compares two keys for ordering purposes within the red-black tree, utilizing
+         * hash codes, {@link Comparable} implementation if available, and fallback identity hash codes.
+         *
+         * @param h1 the hash of the first key
+         * @param h2 the hash of the second key
+         * @param k1 the first key
+         * @param k2 the second key
+         * @return a negative integer, zero, or a positive integer as the first key is less than, equal to, or greater than the second
+         */
+        private int compare(final int h1, final int h2, final K k1, final K k2) {
+            if (h1 != h2)
+                return h1 < h2 ? -1 : 1;
+            if (k1 instanceof Comparable) {
+                int cmp = ((Comparable<? super K>) k1).compareTo(k2);
+                if (cmp != 0)
+                    return cmp;
+            }
+            return System.identityHashCode(k1) <= System.identityHashCode(k2) ? -1 : 1;
+        }
+
+        /**
          * Finds and returns the tree node matching the specified hash and key starting from this node.
          *
          * @param hash the hash value to look up
@@ -1603,9 +1685,8 @@ public class CustomMap<K, V> implements Map<K, V> {
 
         /**
          * Ensures that the given root node of a red-black tree bin is placed at the front
-         * of the bucket's collision chain in the table.
+         * of the bucket's collision chain in the table.16 * @param tab  the hash table array
          *
-         16 * @param tab  the hash table array
          * @param root the root node of the tree
          */
         private static <K, V> void moveRootToFront(final Node<K, V>[] tab, final TreeNode<K, V> root) {
@@ -1925,132 +2006,6 @@ public class CustomMap<K, V> implements Map<K, V> {
     }
 
     /**
-     * A {@link Collection} view of the values contained in this map[cite: 2].
-     * <p>
-     * The collection supports removal operations and clearing via {@link Collection#remove(Object)},
-     * {@link Collection#clear()}, and iterator removal, which safely mutate the underlying {@code CustomMap}.
-     */
-    private final class ValuesView extends AbstractCollection<V> {
-
-        /**
-         * Removes all mappings from the backing {@code CustomMap}, leaving the values collection empty.
-         */
-        public void clear() {
-            CustomMap.this.clear();
-        }
-
-        /**
-         * Returns {@code true} if this collection maps one or more keys to the specified value.
-         *
-         * @param o value whose presence in this collection is to be tested
-         * @return {@code true} if the specified value is mapped to by at least one key, {@code false} otherwise
-         */
-        public boolean contains(final Object o) {
-            return CustomMap.this.containsValue(o);
-        }
-
-        /**
-         * Returns an iterator over the elements in this values collection.
-         *
-         * @return an iterator over the map's values
-         */
-        public Iterator<V> iterator() {
-            return new ValueIterator();
-        }
-
-        /**
-         * Returns the number of values in this collection.
-         *
-         * @return the number of value mappings in the map
-         */
-        public int size() {
-            return CustomMap.this.size();
-        }
-    }
-
-    /**
-     * An iterator over the key-value entries contained in this map.
-     * <p>
-     * Traverses the internal table sequentially across buckets, returning write-through
-     * {@link Map.Entry} instances that reflect and modify the underlying map.
-     */
-    private final class EntryIterator implements Iterator<Entry<K, V>> {
-
-        private int bucketIndex = 0;
-
-        private Node<K, V> nextNode, lastReturned = null;
-
-        /**
-         * Constructs a new {@code EntryIterator} and advances to the first valid entry node.
-         */
-        private EntryIterator() {
-            advanceToNextNode();
-        }
-
-        /**
-         * Advances the internal pointer to the next available entry node across the map's buckets.
-         */
-        private void advanceToNextNode() {
-            if (nextNode != null && nextNode.next != null) {
-                nextNode = nextNode.next;
-                return;
-            }
-            nextNode = null;
-            while (bucketIndex < mapSize) {
-                Node<K, V> head = map[bucketIndex++];
-                if (head != null) {
-                    nextNode = head;
-                    break;
-                }
-            }
-        }
-
-        /**
-         * Returns {@code true} if the iteration has more entries.
-         *
-         * @return {@code true} if there is at least one more entry to iterate over
-         */
-        public boolean hasNext() {
-            return nextNode != null;
-        }
-
-        /**
-         * Returns the next entry in the iteration.
-         *
-         * @return the next map entry
-         * @throws NoSuchElementException if the iteration has no more elements
-         */
-        public Entry<K, V> next() {
-            if (nextNode == null)
-                throw new NoSuchElementException();
-            lastReturned = nextNode;
-            Node<K, V> current = nextNode;
-            advanceToNextNode();
-
-            return new SimpleEntry<>(current.key, current.value) {
-                public V setValue(V value) {
-                    return current.setValue(value);
-                }
-            };
-        }
-
-        /**
-         * Removes from the underlying map the last entry returned by this iterator.
-         * This method can be called only once per call to {@link #next()}.
-         *
-         * @throws IllegalStateException if the {@code next} method has not yet been called,
-         *         or the {@code remove} method has already been called after the last call
-         *         to the {@code next} method
-         */
-        public void remove() {
-            if (lastReturned == null)
-                throw new IllegalStateException();
-            CustomMap.this.remove(lastReturned.key);
-            lastReturned = null;
-        }
-    }
-
-    /**
      * An iterator over the values contained in this map.
      * <p>
      * Traverses the internal table sequentially across buckets, returning values
@@ -2124,6 +2079,50 @@ public class CustomMap<K, V> implements Map<K, V> {
                 throw new IllegalStateException();
             CustomMap.this.remove(lastReturned.key);
             lastReturned = null;
+        }
+    }
+
+    /**
+     * A {@link Collection} view of the values contained in this map[cite: 2].
+     * <p>
+     * The collection supports removal operations and clearing via {@link Collection#remove(Object)},
+     * {@link Collection#clear()}, and iterator removal, which safely mutate the underlying {@code CustomMap}.
+     */
+    private final class ValuesView extends AbstractCollection<V> {
+
+        /**
+         * Removes all mappings from the backing {@code CustomMap}, leaving the values collection empty.
+         */
+        public void clear() {
+            CustomMap.this.clear();
+        }
+
+        /**
+         * Returns {@code true} if this collection maps one or more keys to the specified value.
+         *
+         * @param o value whose presence in this collection is to be tested
+         * @return {@code true} if the specified value is mapped to by at least one key, {@code false} otherwise
+         */
+        public boolean contains(final Object o) {
+            return CustomMap.this.containsValue(o);
+        }
+
+        /**
+         * Returns an iterator over the elements in this values collection.
+         *
+         * @return an iterator over the map's values
+         */
+        public Iterator<V> iterator() {
+            return new ValueIterator();
+        }
+
+        /**
+         * Returns the number of values in this collection.
+         *
+         * @return the number of value mappings in the map
+         */
+        public int size() {
+            return CustomMap.this.size();
         }
     }
 }
